@@ -248,13 +248,24 @@ def ingest_knowledge_to_chroma(knowledge_path: str = "/opt/jkst-master-ai/knowle
         print(f"[LOCAL] Skipped {skipped} files (empty or unreadable)")
 
     if all_texts:
-        print(f"[LOCAL] Embedding {len(all_texts)} chunks...")
-        all_embeddings = model.encode(all_texts).tolist()
+        total = len(all_texts)
+        embed_batch_size = 256  # Embed in batches to avoid OOM and show progress
+        store_batch_size = 100  # ChromaDB storage batch
+
+        print(f"[LOCAL] Embedding {total} chunks in batches of {embed_batch_size}...")
+
+        all_embeddings = []
+        for batch_start in range(0, total, embed_batch_size):
+            batch_end = min(batch_start + embed_batch_size, total)
+            batch_texts = all_texts[batch_start:batch_end]
+            batch_embs = model.encode(batch_texts, show_progress_bar=False).tolist()
+            all_embeddings.extend(batch_embs)
+            progress = len(all_embeddings)
+            print(f"[LOCAL] Embedded {progress}/{total} chunks ({progress*100//total}%)")
 
         # Add to ChromaDB in batches
-        batch_size = 100
-        for i in range(0, len(all_ids), batch_size):
-            end = min(i + batch_size, len(all_ids))
+        for i in range(0, len(all_ids), store_batch_size):
+            end = min(i + store_batch_size, len(all_ids))
             collection.add(
                 ids=all_ids[i:end],
                 documents=all_texts[i:end],
@@ -262,7 +273,7 @@ def ingest_knowledge_to_chroma(knowledge_path: str = "/opt/jkst-master-ai/knowle
                 embeddings=all_embeddings[i:end]
             )
 
-        print(f"[LOCAL] Ingested {len(all_texts)} chunks into ChromaDB")
+        print(f"[LOCAL] Ingested {total} chunks into ChromaDB")
 
     _local_docs_ingested = True
 
@@ -978,31 +989,55 @@ def get_providers() -> Dict[str, Any]:
         print(f"  INITIALIZING RAG MODE: {mode.upper()}")
         print(f"{'='*60}\n")
 
+        # Determine which LLM generator to use for local/ultra modes
+        # LLM_PROVIDER: "gemini" (default) or "openai" (YTL Ilmu, Ollama, etc.)
+        llm_provider = os.environ.get("LLM_PROVIDER", "gemini").lower()
+
+        def _create_generator(for_mode: str) -> BaseGenerator:
+            """Create the appropriate LLM generator based on LLM_PROVIDER env var."""
+            if for_mode == "google":
+                # Google mode always uses Gemini
+                return GeminiGenerator()
+
+            if llm_provider == "openai":
+                base_url = os.environ.get("LOCAL_LLM_BASE_URL", "")
+                api_key = os.environ.get("LOCAL_LLM_API_KEY", "")
+                model = os.environ.get("LOCAL_LLM_MODEL", "")
+                if base_url and api_key:
+                    print(f"[{for_mode.upper()}] Using OpenAI-compatible LLM: {base_url} / {model}")
+                    return OpenAICompatibleGenerator()
+                else:
+                    print(f"[{for_mode.upper()}] OpenAI LLM requested but no LOCAL_LLM_BASE_URL/API_KEY set, falling back to Gemini")
+                    return GeminiGenerator()
+            else:
+                print(f"[{for_mode.upper()}] Using Gemini LLM")
+                return GeminiGenerator()
+
         if mode == "google":
-            # Google mode uses the existing app.py functions directly
-            # We just mark it as initialized
             _providers[mode] = {
                 "mode": "google",
                 "retriever": None,  # Uses app.py's retrieve_from_rag()
                 "reranker": None,   # Uses app.py's rerank_documents()
-                "generator": GeminiGenerator(),
+                "generator": _create_generator("google"),
                 "enhancer": None,
                 "description": "Google Cloud (Vertex AI RAG + Gemini + Cohere Rerank)"
             }
 
         elif mode == "local":
-            generator = GeminiGenerator()  # Gemini for now, swap to OpenAICompatible later
+            generator = _create_generator("local")
+            llm_name = "YTL Ilmu" if llm_provider == "openai" else "Gemini"
             _providers[mode] = {
                 "mode": "local",
                 "retriever": LocalRetriever(),
                 "reranker": LocalReranker(),
                 "generator": generator,
                 "enhancer": None,
-                "description": "Local (ChromaDB + Sentence-Transformers + Gemini LLM)"
+                "description": f"Local (ChromaDB + Mesolitica Malay Embeddings + {llm_name} LLM)"
             }
 
         elif mode == "ultra":
-            generator = GeminiGenerator()  # Gemini for now
+            generator = _create_generator("ultra")
+            llm_name = "YTL Ilmu" if llm_provider == "openai" else "Gemini"
             enhancer = UltraEnhancer(generator)
             _providers[mode] = {
                 "mode": "ultra",
@@ -1011,7 +1046,7 @@ def get_providers() -> Dict[str, Any]:
                 "generator": generator,
                 "enhancer": enhancer,
                 "memory": enhancer.memory,
-                "description": "Ultra (Hybrid Search + Query Expansion + Cross-Encoder Rerank + Self-Eval + CoT)"
+                "description": f"Ultra (Hybrid Search + Query Expansion + Cross-Encoder Rerank + Self-Eval + {llm_name} LLM)"
             }
 
         else:
@@ -1027,9 +1062,25 @@ def get_mode_info() -> Dict[str, Any]:
     providers = get_providers()
     mode = RAG_MODE
 
+    # Determine active LLM name
+    llm_provider = os.environ.get("LLM_PROVIDER", "gemini").lower()
+    if llm_provider == "openai" and mode != "google":
+        llm_model = os.environ.get("LOCAL_LLM_MODEL", "unknown")
+        llm_base = os.environ.get("LOCAL_LLM_BASE_URL", "")
+        # Extract provider name from URL
+        if "ytlailabs" in llm_base:
+            llm_name = f"YTL Ilmu ({llm_model})"
+        elif "localhost" in llm_base or "127.0.0.1" in llm_base:
+            llm_name = f"Ollama ({llm_model})"
+        else:
+            llm_name = f"OpenAI-compatible ({llm_model})"
+    else:
+        llm_name = "Gemini 2.0 Flash"
+
     info = {
         "current_mode": mode,
         "description": providers["description"],
+        "llm_provider": llm_provider if mode != "google" else "gemini",
         "features": {}
     }
 
@@ -1052,7 +1103,7 @@ def get_mode_info() -> Dict[str, Any]:
             "retrieval": "ChromaDB (local vector DB)",
             "embeddings": "mesolitica/mistral-embedding-191m-8k (Malay)",
             "reranking": "Keyword overlap (local)",
-            "llm": "Gemini 2.0 Flash (temporary, swappable)",
+            "llm": llm_name,
             "storage": "Local filesystem",
             "query_expansion": False,
             "hybrid_search": False,
@@ -1066,7 +1117,7 @@ def get_mode_info() -> Dict[str, Any]:
             "retrieval": "ChromaDB + BM25 (hybrid)",
             "embeddings": "mesolitica/mistral-embedding-191m-8k (Malay)",
             "reranking": "Cross-encoder (ms-marco-MiniLM-L-6-v2)",
-            "llm": "Gemini 2.0 Flash (temporary, swappable)",
+            "llm": llm_name,
             "storage": "Local filesystem",
             "query_expansion": True,
             "hybrid_search": True,
