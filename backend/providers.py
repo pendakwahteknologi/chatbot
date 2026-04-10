@@ -399,12 +399,35 @@ class GeminiGenerator(BaseGenerator):
 
 
 class OpenAICompatibleGenerator(BaseGenerator):
-    """Uses any OpenAI-compatible API (YTL Ilmu, Ollama, etc.)."""
+    """
+    Uses any OpenAI-compatible API (YTL Ilmu, Ollama, etc.).
+
+    YTL Ilmu quirk: returns empty content without tools.
+    Workaround: always send a dummy tool so the model activates,
+    then handle tool calls with a follow-up message.
+    """
+
+    # Dummy tool that tricks YTL into generating content
+    DUMMY_TOOL = {
+        "type": "function",
+        "function": {
+            "name": "respond_to_user",
+            "description": "Respond directly to the user with a helpful answer. Use this tool to provide your answer.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "answer": {"type": "string", "description": "Your complete answer to the user's question"}
+                },
+                "required": ["answer"],
+            },
+        },
+    }
 
     def __init__(self):
         self.base_url = os.environ.get("LOCAL_LLM_BASE_URL", "https://api.ytlailabs.tech/v1")
         self.api_key = os.environ.get("LOCAL_LLM_API_KEY", "")
         self.model = os.environ.get("LOCAL_LLM_MODEL", "ilmu-text-free-v2")
+        self.use_tool_workaround = os.environ.get("LOCAL_LLM_TOOL_WORKAROUND", "true").lower() == "true"
         self._client = None
 
     def _get_client(self):
@@ -416,7 +439,92 @@ class OpenAICompatibleGenerator(BaseGenerator):
             )
         return self._client
 
+    def _call_with_tool_workaround(self, messages: list, max_tokens: int = 2000, temperature: float = 0.2) -> str:
+        """Call API with dummy tool to work around empty content bug."""
+        import httpx as _httpx
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "tools": [self.DUMMY_TOOL],
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+
+        resp = _httpx.post(
+            f"{self.base_url}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=120.0
+        )
+        data = resp.json()
+        msg = data.get("choices", [{}])[0].get("message", {})
+
+        # Case 1: Model responded with content directly
+        content = msg.get("content") or ""
+        if content.strip():
+            return content
+
+        # Case 2: Model called our dummy tool — extract the answer
+        tool_calls = msg.get("tool_calls") or []
+        if tool_calls:
+            for tc in tool_calls:
+                func = tc.get("function", {})
+                if func.get("name") == "respond_to_user":
+                    try:
+                        args = json.loads(func.get("arguments", "{}"))
+                        answer = args.get("answer", "")
+                        if answer:
+                            print(f"[YTL] Got answer via tool call ({len(answer)} chars)")
+                            return answer
+                    except json.JSONDecodeError:
+                        # Arguments might be raw text
+                        return func.get("arguments", "")
+
+                # Other tool called — send tool result and get final answer
+                tool_result_messages = messages + [
+                    msg,  # assistant message with tool call
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.get("id", ""),
+                        "content": "Tool not available. Please answer the question directly based on the context provided."
+                    }
+                ]
+                # Second call without tools
+                resp2 = _httpx.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json={
+                        "model": self.model,
+                        "messages": tool_result_messages,
+                        "max_tokens": max_tokens,
+                        "temperature": temperature,
+                    },
+                    timeout=120.0
+                )
+                data2 = resp2.json()
+                content2 = data2.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if content2:
+                    return content2
+
+        # Case 3: Nothing worked
+        print(f"[YTL] Warning: empty response even with tool workaround")
+        return content
+
     def generate(self, prompt: str) -> str:
+        if self.use_tool_workaround and self.api_key:
+            messages = [
+                {"role": "system", "content": "You are a helpful AI assistant. Always provide detailed and helpful answers. If you use the respond_to_user tool, put your COMPLETE answer in the 'answer' parameter."},
+                {"role": "user", "content": prompt}
+            ]
+            return self._call_with_tool_workaround(messages)
+
+        # Standard path (Ollama, other providers)
         client = self._get_client()
         response = client.chat.completions.create(
             model=self.model,
@@ -427,6 +535,16 @@ class OpenAICompatibleGenerator(BaseGenerator):
         return response.choices[0].message.content or ""
 
     def generate_stream(self, prompt: str) -> Generator[str, None, None]:
+        if self.use_tool_workaround and self.api_key:
+            # Tool workaround doesn't support streaming — fall back to non-streaming
+            result = self.generate(prompt)
+            # Simulate streaming by yielding chunks
+            chunk_size = 50
+            for i in range(0, len(result), chunk_size):
+                yield result[i:i + chunk_size]
+            return
+
+        # Standard streaming path
         client = self._get_client()
         stream = client.chat.completions.create(
             model=self.model,
