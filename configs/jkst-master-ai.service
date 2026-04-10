@@ -1,0 +1,44 @@
+[Unit]
+Description=JKST AI Assistant backend (FastAPI + uvicorn)
+After=network.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=adilhidayat
+Group=adilhidayat
+WorkingDirectory=/opt/jkst-master-ai
+EnvironmentFile=/opt/jkst-master-ai/backend.env
+
+# Use multiple workers for better performance (2 x CPU cores + 1)
+ExecStart=/opt/jkst-master-ai/venv/bin/uvicorn app:app \
+    --host 127.0.0.1 \
+    --port 8001 \
+    --workers 4 \
+    --limit-concurrency 100 \
+    --timeout-keep-alive 30
+
+# Restart configuration
+Restart=always
+RestartSec=5
+
+# Resource limits
+MemoryMax=1G
+CPUQuota=80%
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/jkst-master-ai/logs /opt/jkst-master-ai/chroma_db
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=jkst-assistant
+
+[Install]
+WantedBy=multi-user.target

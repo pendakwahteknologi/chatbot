@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ms">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog & Updates - Pembantu Pintar JKST</title>
+    <link rel="icon" type="image/png" href="/jkst-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a8b8;
+            --accent-blue: #0061EB;
+            --accent-cyan: #00f2ff;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --font-main: 'Space Grotesk', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Background Effects */
+        .ambient-light {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(0, 97, 235, 0.15) 0%, transparent 70%);
+            filter: blur(80px);
+            animation: float 10s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        .ambient-light-2 {
+            position: fixed;
+            bottom: -10%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(0, 242, 255, 0.1) 0%, transparent 70%);
+            filter: blur(100px);
+            animation: float 15s ease-in-out infinite reverse;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, 20px); }
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .page-title {
+            flex: 1;
+        }
+
+        .page-title h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .page-title .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Last Update Banner */
+        .last-update {
+            background: linear-gradient(135deg, rgba(0, 97, 235, 0.15) 0%, rgba(0, 242, 255, 0.1) 100%);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .last-update-icon {
+            font-size: 1.5rem;
+        }
+
+        .last-update-content h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 0.25rem;
+        }
+
+        .last-update-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .last-update-date {
+            margin-left: auto;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .section-icon {
+            font-size: 1.25rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* Changelog Items */
+        .changelog-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .changelog-item {
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        .changelog-item.feature {
+            border-left-color: #22c55e;
+        }
+
+        .changelog-item.fix {
+            border-left-color: #f59e0b;
+        }
+
+        .changelog-item.bugfix {
+            border-left-color: #f59e0b;
+        }
+
+        .changelog-item.improvement {
+            border-left-color: var(--accent-cyan);
+        }
+
+        .changelog-version {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .version-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            background: var(--accent-blue);
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        .changelog-date {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .changelog-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .changelog-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .changelog-description ul {
+            margin-top: 0.5rem;
+            padding-left: 1.25rem;
+        }
+
+        .changelog-description li {
+            margin-bottom: 0.25rem;
+        }
+
+        /* Todo Items */
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .todo-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--text-secondary);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .todo-item.completed .todo-status {
+            background: #22c55e;
+            border-color: #22c55e;
+        }
+
+        .todo-item.in-progress .todo-status {
+            background: #f59e0b;
+            border-color: #f59e0b;
+        }
+
+        .todo-item.planned .todo-status {
+            border-color: var(--accent-cyan);
+        }
+
+        .todo-content {
+            flex: 1;
+        }
+
+        .todo-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .todo-item.completed .todo-title {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+
+        .todo-description {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .todo-badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .todo-badge.completed {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .todo-badge.in-progress {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .todo-badge.planned {
+            background: rgba(0, 242, 255, 0.2);
+            color: var(--accent-cyan);
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .page-footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        .page-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .page-title h1 {
+                font-size: 1.5rem;
+            }
+
+            .last-update {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.75rem;
+            }
+
+            .last-update-date {
+                margin-left: 0;
+            }
+
+            .section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-light"></div>
+    <div class="ambient-light-2"></div>
+
+    <main class="main-container">
+        <header class="page-header">
+            <a href="/" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Kembali
+            </a>
+            <div class="page-title">
+                <h1>Changelog & Updates</h1>
+                <p class="subtitle">Sejarah kemas kini dan pelan pembangunan</p>
+            </div>
+        </header>
+
+        <div class="last-update">
+            <div class="last-update-icon">🚀</div>
+            <div class="last-update-content">
+                <h3>Kemas Kini Terakhir</h3>
+                <p>v2.0.2 - Pembetulan URL Muat Turun & Integrasi Laman Web JKST</p>
+            </div>
+            <div class="last-update-date">2 Februari 2026 (7:00 PTG)</div>
+        </div>
+
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">📋</span>
+                <h2 class="section-title">Changelog</h2>
+            </div>
+            <div class="changelog-list">
+                <div class="changelog-item bugfix">
+                    <div class="changelog-version">
+                        <span class="version-tag">v2.0.2</span>
+                        <span class="changelog-date">2 Februari 2026</span>
+                    </div>
+                    <h3 class="changelog-title">Pembetulan URL & Integrasi Laman Web JKST</h3>
+                    <div class="changelog-description">
+                        <ul>
+                            <li><strong>🔧 Pembetulan URL Muat Turun</strong> - Menyelesaikan isu di mana pautan muat turun mengandungi awalan `gs://bucket-name/`</li>
+                            <li>Menambah konfigurasi `GCS_BUCKET_NAME=jkst-data-bucket` dalam `backend.env`</li>
+                            <li>Meningkatkan fungsi `gcs_uri_to_download_url()` untuk mengendalikan nama baldi apa pun secara dinamik</li>
+                            <li><strong>🌐 Kemaskini URL Laman Web JKST</strong> - Menyelesaikan 404 error dengan URL yang salah untuk halaman organisasi</li>
+                            <li>Kemaskini semua URL kepada struktur sebenar laman web JKST: `/profil/`, `/bahagian-suk/`, `/soalan-lazim/`</li>
+                            <li>Pemetaan kata kunci pintar sekarang menyokong berbilang halaman setiap kata kunci</li>
+                            <li><strong>📄 Pengendalian Fail Dinamik</strong> - Mengatasi isu dengan ruang tak boleh putus (NBSP) dalam nama fail GCS</li>
+                            <li>Titik akhir muat turun kini dengan pantas mencuba laluan asal kemudian dinormalkan</li>
+                            <li>Sokongan sokongan balik untuk URL lama dengan awalan `gs://`</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="changelog-item improvement">
+                    <div class="changelog-version">
+                        <span class="version-tag">v2.0.1</span>
+                        <span class="changelog-date">1 Februari 2026</span>
+                    </div>
+                    <h3 class="changelog-title">Penambahbaikan Carian Fail Pengetahuan Tempatan</h3>
+                    <div class="changelog-description">
+                        <ul>
+                            <li><strong>📚 Sokongan Format .md</strong> - Kini membaca fail Markdown (.md) selain .txt dari folder pengetahuan tempatan</li>
+                            <li>19 fail pengetahuan tempatan dimuat dengan automatik untuk carian</li>
+                            <li><strong>🔍 Penambahbaikan Algoritma Carian</strong> - Pemberat lebih tinggi untuk kata kunci penting seperti "objektif", "visi", "misi"</li>
+                            <li>Penilaian yang lebih tepat untuk padanan dokumen yang relevan</li>
+                            <li>Hasil carian yang lebih baik untuk soalan umum tentang JKST</li>
+                            <li>Sumber "Fail Pengetahuan Tempatan" kini ditandakan sebagai SECONDARY (sumber kedua)</li>
+                            <li>Pembelian kembali penuh untuk fail pengetahuan tempatan selepas restart</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="changelog-item feature">
+                    <div class="changelog-version">
+                        <span class="version-tag">v2.0.0</span>
+                        <span class="changelog-date">1 Februari 2026</span>
+                    </div>
+                    <h3 class="changelog-title">Bot Telegram, Sistem Rating, Muat Turun Dokumen & Penambahbaikan Markdown</h3>
+                    <div class="changelog-description">
+                        <ul>
+                            <li><strong>🤖 Bot Telegram @jkst_ai_bot</strong> - Bot Telegram sepenuhnya dioperasikan dengan enjin AI yang sama seperti versi web</li>
+                            <li>Arahan bot: /start, /help, /clear dengan sejarah perbualan setiap obrolan</li>
+                            <li><strong>⭐ Sistem Rating & Feedback</strong> - Pengguna boleh memberi rating dengan ibu jari ke atas/bawah untuk respons AI</li>
+                            <li>Modal ulasan dengan had 500 aksara untuk maklum balas terperinci</li>
+                            <li>Penyimpanan CSV untuk analitik dengan penguncian berkas</li>
+                            <li><strong>📥 Muat Turun Dokumen</strong> - Nama borang boleh diklik terus untuk muat turun dokumen</li>
+                            <li>Deteksi nama borang automatik dalam respons AI dengan pengesahan dokumen</li>
+                            <li><strong>✨ Penambahbaikan Markdown</strong> - Format senarai peluru yang betul dengan pengenal kepala bahagian</li>
+                            <li>Deteksi baris kepala (berakhir dengan :) untuk pengesoran visual yang lebih baik</li>
+                            <li>Pembersihan jarak lebihan dengan penghubung `&lt;br&gt;` yang lebih baik</li>
+                            <li>Pautan media sosial ke bot Telegram dalam antara muka</li>
+                            <li>Penghalaan nginx untuk /api/telegram dan /api/feedback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="changelog-item feature">
+                    <div class="changelog-version">
+                        <span class="version-tag">v1.3.0</span>
+                        <span class="changelog-date">28 Januari 2026</span>
+                    </div>
+                    <h3 class="changelog-title">Rujukan Dokumen Boleh Diruntuh</h3>
+                    <div class="changelog-description">
+                        <ul>
+                            <li>Rujukan dokumen kini boleh diruntuh/diluaskan untuk menghemat ruang</li>
+                            <li>Tambah halaman Senibina Sistem dengan dokumentasi teknikal lengkap</li>
+                            <li>Sistem RAG (Retrieval-Augmented Generation) dijelaskan secara menyeluruh</li>
+                            <li>Tambah visualisasi aliran data dan teknologi yang digunakan</li>
+                            <li>Penambahbaikan UI untuk rujukan dokumen dengan preview teks</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="changelog-item feature">
+                    <div class="changelog-version">
+                        <span class="version-tag">v1.2.0</span>
+                        <span class="changelog-date">28 Januari 2026</span>
+                    </div>
+                    <h3 class="changelog-title">Penambahbaikan Antara Muka</h3>
+                    <div class="changelog-description">
+                        <ul>
+                            <li>Tambah halaman Changelog & Updates</li>
+                            <li>Penambahbaikan responsive untuk paparan mudah alih</li>
+                            <li>Penyelarasan tengah untuk bahagian "Inovasi oleh" pada skrin kecil</li>
+                            <li>Tambah footer navigasi untuk akses mudah ke halaman lain</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="changelog-item improvement">
+                    <div class="changelog-version">
+                        <span class="version-tag">v1.1.0</span>
+                        <span class="changelog-date">27 Januari 2026</span>
+                    </div>
+                    <h3 class="changelog-title">Ciri Sejarah Perbualan</h3>
+                    <div class="changelog-description">
+                        <ul>
+                            <li>Tambah fungsi menyimpan sejarah perbualan dalam session storage</li>
+                            <li>Butang "Padam sejarah perbualan" untuk memulakan semula</li>
+                            <li>Pemulihan perbualan secara automatik apabila halaman dimuat semula</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="changelog-item feature">
+                    <div class="changelog-version">
+                        <span class="version-tag">v1.0.0</span>
+                        <span class="changelog-date">20 Januari 2026</span>
+                    </div>
+                    <h3 class="changelog-title">Pelancaran Awal</h3>
+                    <div class="changelog-description">
+                        <ul>
+                            <li>Pelancaran antara muka chatbot Pembantu AI JKST</li>
+                            <li>Integrasi dengan sistem RAG untuk pangkalan pengetahuan JKST</li>
+                            <li>Paparan rujukan dokumen untuk setiap jawapan</li>
+                            <li>Sokongan untuk markdown dalam respons</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">📝</span>
+                <h2 class="section-title">To-Do / Pelan Pembangunan</h2>
+            </div>
+            <div class="todo-list">
+                <div class="todo-item completed">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Integrasi Bot Telegram</h3>
+                        <p class="todo-description">Bot Telegram @jkst_ai_bot dengan enjin AI yang sama seperti web</p>
+                    </div>
+                    <span class="todo-badge completed">Selesai</span>
+                </div>
+
+                <div class="todo-item completed">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Sistem Rating & Feedback</h3>
+                        <p class="todo-description">Pengguna boleh memberi rating dengan ibu jari ke atas/bawah untuk respons AI</p>
+                    </div>
+                    <span class="todo-badge completed">Selesai</span>
+                </div>
+
+                <div class="todo-item completed">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Muat Turun Dokumen Terus</h3>
+                        <p class="todo-description">Nama borang boleh diklik terus untuk muat turun dokumen dari RAG</p>
+                    </div>
+                    <span class="todo-badge completed">Selesai</span>
+                </div>
+
+                <div class="todo-item completed">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Penambahbaikan Format Markdown</h3>
+                        <p class="todo-description">Format senarai peluru yang betul dengan pengenal kepala bahagian</p>
+                    </div>
+                    <span class="todo-badge completed">Selesai</span>
+                </div>
+
+                <div class="todo-item planned">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Integrasi dengan sistem e-mel JKST</h3>
+                        <p class="todo-description">Membolehkan pengguna menghantar hasil perbualan ke e-mel</p>
+                    </div>
+                    <span class="todo-badge planned">Dirancang</span>
+                </div>
+
+                <div class="todo-item planned">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Sokongan muat naik dokumen</h3>
+                        <p class="todo-description">Pengguna boleh memuat naik dokumen untuk analisis</p>
+                    </div>
+                    <span class="todo-badge planned">Dirancang</span>
+                </div>
+
+                <div class="todo-item planned">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Analytics dashboard untuk pentadbir</h3>
+                        <p class="todo-description">Dashboard untuk melihat statistik penggunaan dan soalan yang sering ditanya</p>
+                    </div>
+                    <span class="todo-badge planned">Dirancang</span>
+                </div>
+
+                <div class="todo-item in-progress">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Penambahbaikan ketepatan jawapan</h3>
+                        <p class="todo-description">Meningkatkan kualiti dan ketepatan respons AI</p>
+                    </div>
+                    <span class="todo-badge in-progress">Dalam Proses</span>
+                </div>
+
+                <div class="todo-item completed">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Rujukan dokumen boleh diruntuh</h3>
+                        <p class="todo-description">Buat rujukan dokumen boleh diruntuh untuk menghemat ruang paparan</p>
+                    </div>
+                    <span class="todo-badge completed">Selesai</span>
+                </div>
+
+                <div class="todo-item completed">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Dokumentasi senibina sistem</h3>
+                        <p class="todo-description">Halaman lengkap menjelaskan senibina sistem dan teknologi yang digunakan</p>
+                    </div>
+                    <span class="todo-badge completed">Selesai</span>
+                </div>
+
+                <div class="todo-item completed">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Sejarah perbualan</h3>
+                        <p class="todo-description">Menyimpan dan memulihkan sejarah perbualan</p>
+                    </div>
+                    <span class="todo-badge completed">Selesai</span>
+                </div>
+
+                <div class="todo-item completed">
+                    <div class="todo-status"></div>
+                    <div class="todo-content">
+                        <h3 class="todo-title">Paparan rujukan dokumen</h3>
+                        <p class="todo-description">Menunjukkan sumber rujukan untuk setiap jawapan</p>
+                    </div>
+                    <span class="todo-badge completed">Selesai</span>
+                </div>
+            </div>
+        </section>
+
+        <footer class="page-footer">
+            <p>Pembantu Pintar JKST &copy; 2026 | <a href="https://syariah.terengganu.gov.my" target="_blank">JKST</a></p>
+            <p style="margin-top: 0.5rem;">Inovasi oleh Bahagian Transformasi Digital</p>
+            <p style="margin-top: 1rem;">
+                <a href="/">Laman Utama</a> &bull;
+                <a href="/architecture.html">Senibina Sistem</a>
+            </p>
+        </footer>
+    </main>
+</body>
+
+</html>

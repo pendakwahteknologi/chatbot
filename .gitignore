@@ -1,0 +1,23 @@
+# Environment and secrets
+backend.env
+*.env
+!*.env.template
+jkst-credentials.json
+*.json
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.cache/
+
+# Data (too large for git)
+documents/
+chroma_db/
+logs/
+*.db
+*.csv
+
+# OS
+.DS_Store
+Thumbs.db

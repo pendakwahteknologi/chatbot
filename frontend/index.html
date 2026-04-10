@@ -1,0 +1,2673 @@
+<!DOCTYPE html>
+<html lang="ms">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembantu Pintar JKST</title>
+    <link rel="icon" type="image/png" href="/jkst-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a8b8;
+            --accent-blue: #0061EB;
+            --accent-cyan: #00f2ff;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --font-main: 'Space Grotesk', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Ambient Background Effects */
+        .ambient-light {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(0, 97, 235, 0.15) 0%, transparent 70%);
+            filter: blur(80px);
+            animation: float 10s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        .ambient-light-2 {
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(0, 242, 255, 0.1) 0%, transparent 70%);
+            filter: blur(100px);
+            animation: float 15s ease-in-out infinite reverse;
+            z-index: -1;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Main Container */
+        .main-container {
+            width: 100%;
+            height: 100%;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 3rem;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 3rem;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
+            transform: translateX(-100%);
+            animation: shine 8s infinite;
+            pointer-events: none;
+        }
+
+        .content-left {
+            flex: 0 0 auto;
+            width: 380px;
+            max-width: 380px;
+            min-width: 280px;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .content-left::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .content-left::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-left::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.4rem 0.75rem;
+            background: rgba(0, 97, 235, 0.2);
+            border: 1px solid rgba(0, 97, 235, 0.4);
+            border-radius: 100px;
+            color: var(--accent-cyan);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: fit-content;
+        }
+
+        h1 {
+            font-size: 3rem;
+            line-height: 1.1;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-weight: 300;
+        }
+
+        /* Info Section */
+        .info-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-card {
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(0, 97, 235, 0.08);
+            border: 1px solid rgba(0, 97, 235, 0.2);
+            border-radius: 12px;
+        }
+
+        .info-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .info-content h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 0.25rem;
+        }
+
+        .info-content p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .info-content a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        .info-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* Disclaimer Box */
+        .disclaimer-box {
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+
+        .disclaimer-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .disclaimer-content {
+            font-size: 0.75rem;
+            color: #fca5a5;
+            line-height: 1.4;
+        }
+
+        .disclaimer-content strong {
+            color: #f87171;
+        }
+
+        /* Creator Section */
+        .creator-section {
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            width: 100%;
+        }
+
+        .creator-header {
+            margin-bottom: 0.75rem;
+        }
+
+        .creator-badge {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .creator-name-link {
+            text-decoration: none;
+            display: block;
+        }
+
+        .creator-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin: 0.25rem 0;
+        }
+
+        .breathing-text {
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        .creator-name-link:hover .breathing-text {
+            animation: none;
+            text-shadow: 0 0 20px var(--accent-cyan), 0 0 40px var(--accent-cyan);
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                opacity: 0.7;
+                text-shadow: 0 0 5px transparent;
+            }
+
+            50% {
+                opacity: 1;
+                text-shadow: 0 0 15px var(--accent-cyan), 0 0 30px rgba(0, 242, 255, 0.3);
+            }
+        }
+
+        .creator-header p {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .creator-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .creator-main-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(0, 97, 235, 0.15);
+            border: 1px solid rgba(0, 97, 235, 0.3);
+            border-radius: 8px;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .creator-main-link:hover {
+            background: rgba(0, 97, 235, 0.25);
+            transform: translateX(4px);
+        }
+
+        .creator-main-link svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .social-links {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.3rem;
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 97, 235, 0.15);
+            border: 1px solid rgba(0, 97, 235, 0.3);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .social-link:hover {
+            background: rgba(0, 97, 235, 0.3);
+            color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        .social-link svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .social-link .social-text {
+            font-size: 10px;
+        }
+
+        /* Chat Section */
+        .content-right {
+            flex: 1 1 auto;
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+            z-index: 2;
+        }
+
+        .chatbot-container {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chatbot-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 97, 235, 0.1);
+        }
+
+        .chatbot-header-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .chatbot-header-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 4px;
+        }
+
+        .chatbot-header-text h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .chatbot-header-text span {
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chatbot-header-text span::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        .header-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+
+        .clear-chat-btn {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: #fca5a5;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-main);
+        }
+
+        .clear-chat-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-history::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-history::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-history::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .chat-message {
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+        }
+
+        .chat-message.bot {
+            align-self: flex-start;
+        }
+
+        .bubble {
+            padding: 0.875rem 1.125rem;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .chat-message.user .bubble {
+            background: var(--accent-blue);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-message.bot .bubble {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-time {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        .chat-message.user .chat-time {
+            text-align: right;
+        }
+
+        /* Reference/Retrieval Section */
+        .retrieval-section {
+            margin-top: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(0, 97, 235, 0.08);
+            border: 1px solid rgba(0, 97, 235, 0.25);
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .retrieval-section:hover {
+            background: rgba(0, 97, 235, 0.12);
+        }
+
+        .retrieval-section.collapsed {
+            padding-bottom: 0.5rem;
+        }
+
+        .retrieval-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 0.5rem 0;
+            user-select: none;
+            transition: opacity 0.2s;
+        }
+
+        .retrieval-header:hover {
+            opacity: 0.8;
+        }
+
+        .retrieval-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            background: rgba(0, 97, 235, 0.3);
+            transition: transform 0.3s, background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .retrieval-toggle svg {
+            width: 12px;
+            height: 12px;
+            color: var(--accent-cyan);
+        }
+
+        .retrieval-section.collapsed .retrieval-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .retrieval-header-text {
+            flex: 1;
+        }
+
+        .retrieval-count {
+            font-size: 0.65rem;
+            background: rgba(0, 97, 235, 0.3);
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            color: var(--text-secondary);
+        }
+
+        .retrieval-content {
+            max-height: 300px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+            opacity: 1;
+            padding-top: 0.5rem;
+        }
+
+        .retrieval-content::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .retrieval-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        .retrieval-content::-webkit-scrollbar-thumb {
+            background: rgba(0, 97, 235, 0.5);
+            border-radius: 3px;
+        }
+
+        .retrieval-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 97, 235, 0.7);
+        }
+
+        .retrieval-section.collapsed .retrieval-content {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+        }
+
+        .retrieval-item {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border-left: 2px solid var(--accent-blue);
+        }
+
+        .retrieval-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .retrieval-item a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        .retrieval-item a:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== DOCUMENT DOWNLOAD STYLES ===== */
+        .documents-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(0, 242, 255, 0.05) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+        }
+
+        .documents-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #22c55e;
+        }
+
+        .documents-header svg {
+            width: 20px;
+            height: 20px;
+            color: #22c55e;
+        }
+
+        .documents-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .document-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .document-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .document-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .document-name {
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            word-break: break-word;
+            display: inline;
+        }
+
+        .document-type {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            display: inline;
+            margin-left: 0.25rem;
+        }
+
+        .download-link {
+            color: #22c55e;
+            text-decoration: underline;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .download-link:hover {
+            opacity: 0.8;
+        }
+
+        .download-link:active {
+            opacity: 0.6;
+        }
+
+        /* Form link styling */
+        .form-link {
+            color: var(--accent-blue);
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin: 0 2px;
+        }
+
+        .form-link:hover {
+            opacity: 0.7;
+            color: var(--accent-cyan);
+        }
+
+        .form-link:active {
+            opacity: 0.5;
+        }
+
+        .retrieval-filename {
+            font-weight: 500;
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .retrieval-preview {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .ref-badge {
+            display: inline-block;
+            background: rgba(0, 97, 235, 0.3);
+            border: 1px solid rgba(0, 97, 235, 0.5);
+            color: var(--accent-cyan);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin: 0 2px;
+            vertical-align: middle;
+        }
+
+        .chat-heading {
+            margin: 1rem 0 0.5rem 0;
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+
+        .chat-heading.h2 {
+            font-size: 1.2rem;
+        }
+
+        .chat-heading.h3 {
+            font-size: 1.1rem;
+        }
+
+        .chat-heading.h4 {
+            font-size: 1rem;
+        }
+
+        .chat-heading.h5 {
+            font-size: 0.95rem;
+        }
+
+        .chat-list {
+            margin: 0.5rem 0 0.75rem 0;
+            padding-left: 1.25rem;
+            list-style-type: none;
+        }
+
+        .chat-list li {
+            margin-bottom: 0.3rem;
+            line-height: 1.5;
+            position: relative;
+            padding-left: 0.5rem;
+        }
+
+        .chat-list li.bullet::before {
+            content: "•";
+            position: absolute;
+            left: -0.75rem;
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        .chat-list li.numbered {
+            padding-left: 0.5rem;
+        }
+
+        .chat-list li.numbered::before {
+            content: attr(data-num) ".";
+            position: absolute;
+            left: -1.25rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+
+        .chat-list .list-header-item {
+            font-weight: 600;
+            margin: 0.75rem 0 0.25rem 0;
+            color: var(--accent-cyan);
+            list-style: none;
+        }
+
+        .chat-list .list-header-item::before {
+            content: none !important;
+        }
+
+        .chat-list .list-header-item strong {
+            color: var(--accent-cyan);
+        }
+
+        .chat-code {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .chat-inline-code {
+            background: rgba(0, 97, 235, 0.2);
+            border-radius: 4px;
+            padding: 0.15rem 0.4rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85em;
+            color: var(--accent-cyan);
+        }
+
+        .chat-quote {
+            border-left: 3px solid var(--accent-blue);
+            margin: 0.5rem 0;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 97, 235, 0.1);
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        .chat-hr {
+            border: none;
+            border-top: 1px solid var(--glass-border);
+            margin: 1rem 0;
+        }
+
+        .chat-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.75rem 0;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .chat-table thead {
+            background: rgba(0, 97, 235, 0.25);
+        }
+
+        .chat-table th {
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .chat-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-primary);
+        }
+
+        .chat-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .chat-link {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--accent-cyan);
+            transition: opacity 0.2s;
+        }
+
+        .chat-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        del {
+            color: var(--text-secondary);
+            text-decoration: line-through;
+        }
+
+        em {
+            font-style: italic;
+        }
+
+        strong {
+            font-weight: 600;
+        }
+
+        .rujukan-label {
+            color: var(--text-primary);
+        }
+
+        .chat-input-area {
+            padding: 1rem 1.5rem 1.5rem;
+            border-top: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-row textarea {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            resize: none;
+            min-height: 48px;
+            max-height: 120px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .chat-input-row textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .chat-input-row textarea:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(0, 97, 235, 0.2);
+        }
+
+        .chat-input-row button {
+            background: var(--accent-blue);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: #fff;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-input-row button:hover {
+            background: #0052cc;
+        }
+
+        .chat-input-row button:active {
+            transform: scale(0.98);
+        }
+
+        .chat-input-row button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .chat-hint {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* Footer */
+        .page-footer {
+            position: fixed;
+            bottom: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+        }
+
+        .footer-link {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            opacity: 0.5;
+            transition: opacity 0.2s, color 0.2s;
+            padding: 0.25rem 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .footer-link:hover {
+            opacity: 1;
+            color: var(--accent-cyan);
+        }
+
+        .footer-divider {
+            color: var(--text-secondary);
+            opacity: 0.3;
+            margin: 0 0.5rem;
+        }
+
+        /* Animations */
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(20px, 20px);
+            }
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            20% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            body {
+                height: 100vh;
+                height: 100dvh;
+                overflow: hidden;
+            }
+
+            .main-container {
+                padding: 0.5rem;
+                height: 100vh;
+                height: 100dvh;
+                overflow: hidden;
+            }
+
+            .glass-card {
+                flex-direction: column;
+                align-items: center;
+                padding: 0.75rem;
+                height: 100%;
+                gap: 0.5rem;
+                overflow: hidden;
+            }
+
+            .content-left {
+                text-align: center;
+                width: 100%;
+                max-width: 100%;
+                flex: 0 0 auto;
+                overflow-y: visible;
+                padding-right: 0;
+                align-items: center;
+            }
+
+            .badge {
+                margin-left: auto;
+                margin-right: auto;
+                padding: 0.3rem 0.6rem;
+                font-size: 0.65rem;
+                margin-bottom: 0.5rem;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .subtitle {
+                font-size: 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+
+            /* Hide info section on mobile */
+            .info-section {
+                display: none;
+            }
+
+            /* Compact disclaimer - single line */
+            .disclaimer-box {
+                padding: 0.4rem 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .disclaimer-icon {
+                display: none;
+            }
+
+            .disclaimer-content {
+                font-size: 0.6rem;
+                text-align: center;
+            }
+
+            /* Compact creator section */
+            .creator-section {
+                padding: 0.5rem;
+            }
+
+            .creator-header {
+                margin-bottom: 0.4rem;
+            }
+
+            .creator-badge {
+                font-size: 0.55rem;
+            }
+
+            .creator-header h3 {
+                font-size: 0.8rem;
+                margin: 0.15rem 0;
+            }
+
+            .creator-header p {
+                display: none;
+            }
+
+            .creator-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.3rem;
+                margin-bottom: 0.4rem;
+                justify-content: center;
+            }
+
+            .creator-main-link {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.6rem;
+                gap: 0.25rem;
+            }
+
+            .creator-main-link svg {
+                width: 11px;
+                height: 11px;
+            }
+
+            .social-links {
+                gap: 0.25rem;
+                justify-content: center;
+            }
+
+            .social-link {
+                width: 26px;
+                height: 26px;
+            }
+
+            .social-link svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            .social-link .social-text {
+                font-size: 10px;
+            }
+
+            .innovation-badge {
+                justify-content: center !important;
+                text-align: center;
+            }
+
+            .innovation-badge div {
+                text-align: center;
+            }
+
+            .content-right {
+                max-width: 100%;
+                width: 100%;
+                flex: 1 1 0;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .chatbot-container {
+                height: 100%;
+                min-height: 0;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .main-container {
+                padding: 0.35rem;
+            }
+
+            .glass-card {
+                padding: 0.5rem;
+                border-radius: 12px;
+                gap: 0.4rem;
+            }
+
+            h1 {
+                font-size: 1.3rem;
+            }
+
+            .subtitle {
+                font-size: 0.65rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .info-card {
+                min-width: 160px;
+            }
+
+            .chatbot-container {
+                height: 100%;
+                min-height: 0;
+                border-radius: 10px;
+            }
+
+            .chatbot-header {
+                padding: 0.75rem;
+            }
+
+            .chatbot-header-logo {
+                width: 32px;
+                height: 32px;
+            }
+
+            .chatbot-header-logo img {
+                width: 100%;
+                height: 100%;
+            }
+
+            .chatbot-header-text h2 {
+                font-size: 0.85rem;
+            }
+
+            .chatbot-header-text span {
+                font-size: 0.65rem;
+            }
+
+            .chat-history {
+                padding: 0.75rem;
+            }
+
+            .bubble {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .chat-input-area {
+                padding: 0.5rem 0.75rem 0.75rem;
+            }
+
+            .chat-input-row textarea {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+                min-height: 40px;
+            }
+
+            .chat-input-row button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            .chat-hint {
+                font-size: 0.6rem;
+                margin-top: 0.4rem;
+            }
+
+            .clear-chat-btn {
+                padding: 4px 8px;
+                font-size: 0.65rem;
+            }
+        }
+
+        /* ===== RATING SYSTEM STYLES ===== */
+        .rating-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--glass-border);
+            flex-wrap: wrap;
+        }
+
+        .rating-btn {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            font-family: var(--font-main);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .rating-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .rating-btn.active.thumbs-up {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+
+        .rating-btn.active.thumbs-down {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+        }
+
+        .rating-btn.comment-btn {
+            position: relative;
+        }
+
+        .comment-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 16px;
+            height: 16px;
+            background: #0061EB;
+            border-radius: 50%;
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .thank-you-msg {
+            font-size: 0.8rem;
+            color: #22c55e;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* ===== MODAL STYLES ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        #feedbackComment {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 100px;
+            max-height: 200px;
+        }
+
+        #feedbackComment:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .char-counter {
+            margin-top: 0.5rem;
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            border-top: 1px solid var(--glass-border);
+            justify-content: flex-end;
+        }
+
+        .btn-cancel, .btn-submit {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            font-family: var(--font-main);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .btn-submit {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: #0051d1;
+            box-shadow: 0 0 20px rgba(0, 97, 235, 0.3);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            .rating-container {
+                gap: 0.4rem;
+            }
+
+            .rating-btn {
+                padding: 0.35rem 0.6rem;
+                font-size: 0.75rem;
+            }
+
+            .modal-container {
+                width: 95%;
+                max-width: 100%;
+            }
+
+            .modal-header, .modal-body, .modal-footer {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-light"></div>
+    <div class="ambient-light-2"></div>
+    <div class="grid-overlay"></div>
+
+    <main class="main-container">
+        <div class="glass-card">
+            <!-- Left: Text Section -->
+            <div class="content-left">
+                <div class="badge">Lebih Bijak. Lebih Pantas.</div>
+                <h1>Pembantu AI<br><span class="gradient-text">JKST</span></h1>
+                <p class="subtitle">Pembantu AI untuk Jabatan Kehakiman Syariah Terengganu</p>
+
+                <div class="info-section">
+                    <div class="info-card">
+                        <div class="info-icon">⚖️</div>
+                        <div class="info-content">
+                            <h3>Perkhidmatan Mahkamah</h3>
+                            <p>Bantuan berkaitan prosedur mahkamah syariah, permohonan kes, perbicaraan, dan pendaftaran.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-icon">👨‍👩‍👧‍👦</div>
+                        <div class="info-content">
+                            <h3>Undang-undang Keluarga</h3>
+                            <p>Sokongan untuk perkahwinan, perceraian, nafkah, hadhanah, sulh (mediasi) dan sokongan keluarga.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-icon">📚</div>
+                        <div class="info-content">
+                            <h3>Jawapan dengan Rujukan</h3>
+                            <p>Setiap jawapan disertakan rujukan (borang, prosedur, arahan dan dokumen rasmi
+                                JKST).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disclaimer-box">
+                    <div class="disclaimer-icon">ℹ️</div>
+                    <div class="disclaimer-content">
+                        <strong>Penting:</strong> Sistem ini adalah untuk <strong>PENILAIAN DALAMAN</strong> sahaja dan tidak dibenarkan untuk kegunaan awam.
+                        Jawapan yang diberikan adalah berdasarkan pangkalan pengetahuan JKST untuk panduan am.
+                        Untuk perkara undang-undang yang memerlukan keputusan rasmi atau nasihat perundangan,
+                        sila rujuk pegawai mahkamah atau peguam syarie yang bertauliah.
+                    </div>
+                </div>
+
+                <div class="creator-section">
+                    <div class="creator-header">
+                        <span class="creator-badge">Dikendalikan oleh</span>
+                        <p>Jabatan Kehakiman Syariah Terengganu</p>
+                    </div>
+                    <div class="creator-links">
+                        <a href="https://syariah.terengganu.gov.my" target="_blank" class="creator-main-link">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                            </svg>
+                            syariah.terengganu.gov.my
+                        </a>
+                    </div>
+                    <!--
+                        Social Links Section
+                        Updated: 2026-02-01
+
+                        Contains links to JKST social media and AI services:
+                        - Facebook: Official JKST page
+                        - Telegram Bot: @jkst_ai_bot (NEW - 2026-02-01)
+
+                        The Telegram bot provides the same AI assistance as the web interface,
+                        accessible via https://t.me/jkst_ai_bot
+                        Users can interact with the JKST AI Assistant directly in Telegram.
+                    -->
+                    <div class="social-links">
+                        <!-- Facebook Link -->
+                        <a href="https://www.facebook.com/syariahterengganu" target="_blank"
+                            title="Facebook" class="social-link">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            </svg>
+                        </a>
+                        <!-- Telegram Bot Link (NEW: 2026-02-01) -->
+                        <!--
+                            Telegram Bot Integration
+                            Bot Name: Pembantu AI Jabatan Kehakiman Syariah Terengganu
+                            Bot Username: @jkst_ai_bot
+                            Bot ID: 8292071443
+
+                            Features:
+                            - Same AI engine as web version (RAG + Gemini)
+                            - Per-chat conversation history
+                            - Commands: /start, /help, /clear
+                            - Automatic message responses
+                            - Smart formatting for Telegram
+
+                            Backend:
+                            - Webhook endpoint: POST /api/telegram/webhook
+                            - Webhook registered with Telegram API
+                            - Nginx routing configured for /api/telegram
+                            - In-memory conversation storage per chat
+
+                            Implementation Date: 2026-02-01
+                            Status: Production Ready
+                        -->
+                        <a href="https://t.me/jkst_ai_bot" target="_blank"
+                            title="Telegram Bot" class="social-link">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+                            </svg>
+                        </a>
+                        <a href="#" style="display:none" target="_blank" title="Hidden"
+                            class="social-link">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                            </svg>
+                        </a>
+                        <a href="#" style="display:none" target="_blank" title="Hidden"
+                            class="social-link">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="innovation-badge"
+                        style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: linear-gradient(135deg, rgba(0, 242, 255, 0.1) 0%, rgba(0, 97, 235, 0.1) 100%); border: 1px solid rgba(0, 242, 255, 0.3); border-radius: 8px; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            style="width: 16px; height: 16px; color: var(--accent-cyan); flex-shrink: 0;">
+                            <path
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div style="font-size: 0.7rem; color: var(--text-secondary); line-height: 1.3;">
+                            <span style="color: var(--accent-cyan); font-weight: 500;">Inovasi bersama oleh</span><br>
+                            <span style="font-weight: 600; color: var(--text-primary);">Pendakwah Teknologi & JKST</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Chat Section -->
+            <div class="content-right">
+                <div class="chatbot-container">
+                    <div class="chatbot-header">
+                        <div class="chatbot-header-logo">
+                            <img src="/jkst-logo.png" alt="Logo JKST">
+                        </div>
+                        <div class="chatbot-header-text">
+                            <h2>Pembantu Pintar JKST</h2>
+                            <span>Aktif</span>
+                        </div>
+                        <div class="header-actions">
+                            <button class="clear-chat-btn" id="clearChatBtn"
+                                title="Padam perbualan dan mulakan semula">Padam sejarah perbualan</button>
+                        </div>
+                    </div>
+
+                    <div class="chat-history" id="chatHistory">
+                        <!-- Welcome message will be added by JavaScript -->
+                    </div>
+
+                    <div class="chat-input-area">
+                        <div class="chat-input-row">
+                            <textarea id="question" placeholder="Taip soalan di sini..." rows="1"></textarea>
+                            <button id="askBtn">
+                                <span>Hantar</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chat-hint">Tekan Enter untuk hantar • Shift+Enter untuk baris baharu</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Tambah Komen</h3>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="feedbackComment" maxlength="500" placeholder="Masukkan ulasan anda di sini (pilihan)..."></textarea>
+                <div class="char-counter">0/500 aksara</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Batal</button>
+                <button class="btn-submit">Hantar Komen</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <a href="/changelog.html" class="footer-link">Changelog</a>
+        <span class="footer-divider">•</span>
+        <a href="/architecture.html" class="footer-link">Senibina Sistem</a>
+    </footer>
+
+    <script>
+        const chatHistory = document.getElementById('chatHistory');
+        const questionInput = document.getElementById('question');
+        const askBtn = document.getElementById('askBtn');
+        const clearChatBtn = document.getElementById('clearChatBtn');
+
+        // Session storage key for conversation history
+        const STORAGE_KEY = 'jkst_assistant_history';
+        const FEEDBACK_STORAGE_KEY = 'jkst_feedback_ratings';
+
+        // Welcome message
+        const WELCOME_MESSAGE = `Salam sejahtera. Saya Pembantu AI JKST (Jabatan Kehakiman Syariah Terengganu). Saya boleh membantu anda dengan maklumat mengenai prosedur mahkamah syariah, undang-undang keluarga Islam, dan perkhidmatan JKST.
+
+Apa yang boleh saya bantu hari ini?`;
+
+        // Initialize conversation history from session storage
+        let conversationHistory = [];
+        let currentFeedbackMessageId = null;
+        let feedbackRatings = {};
+
+        // Form catalog - maps form names to search queries for finding them
+        const FORM_CATALOG = {
+            'Pernyataan Tuntutan': 'Pernyataan Tuntutan',
+            'Notis Permohonan': 'Notis Permohonan',
+            'Afidavit': 'Afidavit',
+            'Borang MS 27': 'MS 27',
+            'Surat Nikah': 'Surat Nikah',
+            'Surat Rujuk': 'Surat Rujuk',
+            'Surat Permastautinan': 'Permastautinan',
+            'KP': 'pengenalan',
+            'Kad Pengenalan': 'pengenalan',
+            'Perakuan Segera': 'Perakuan Segera',
+            'Borang Permohonan': 'Borang Permohonan',
+            'Panduan': 'Panduan',
+            'Cerai': 'Cerai',
+        };
+
+        /**
+         * generateMessageId()
+         *
+         * Generates a unique message identifier for rating & feedback tracking.
+         *
+         * Format: msg_[timestamp]_[random]
+         * Example: msg_1705123456789_abc123def
+         *
+         * Components:
+         * - msg_: Prefix for easy identification
+         * - timestamp: Current milliseconds (Date.now())
+         * - random: 9-character alphanumeric string from Math.random()
+         *
+         * Collision Probability: ~1 in 10^15 (extremely unlikely)
+         * Purpose: Uniquely track each AI response for rating/feedback
+         * Storage: sessionStorage (browser) + CSV (server)
+         *
+         * Implemented: 2026-02-01 for Rating & Feedback System
+         */
+        function generateMessageId() {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substr(2, 9);
+            return `msg_${timestamp}_${random}`;
+        }
+
+        /**
+         * convertFormNamesToLinks(html, retrieval)
+         *
+         * Detects form/document names in AI responses and converts them to clickable download links.
+         *
+         * Features:
+         * - Scans AI response text for form names from FORM_CATALOG
+         * - Validates documents against RAG retrieval data
+         * - Only creates links for documents that actually exist
+         * - Filters out broken/invalid document references
+         * - Creates direct download links (onclick handlers)
+         *
+         * Document Validation:
+         * - File extension check: .pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx, .txt, .zip, .rar, .jpg, .png, .gif
+         * - Path validation: must contain '/' and not contain '?' or '&'
+         * - Filters JSON error responses (e.g., {"detail":"Dokumen tidak dijumpai"})
+         *
+         * Algorithm:
+         * 1. Build documentMap from retrieval data
+         *    - For each document, check if filename matches any FORM_CATALOG entry
+         *    - Validate file extension or path structure
+         *    - Store valid documents in map
+         * 2. Scan HTML for form name matches
+         *    - Use case-insensitive word boundary matching
+         *    - Create onclick handler to call downloadDocument()
+         * 3. Return HTML with form names converted to links
+         *
+         * Example Input:
+         *   AI: "Anda perlu mengisi Pernyataan Tuntutan dan Notis Permohonan..."
+         *   retrieval: [{filename: "Pernyataan Tuntutan.pdf", ...}, ...]
+         *
+         * Example Output:
+         *   "Anda perlu mengisi <a class="form-link" onclick="...">📋 Pernyataan Tuntutan</a>..."
+         *
+         * Implemented: 2026-02-01 for Document Download Feature
+         * Updated: 2026-02-01 with validation filters
+         */
+        function convertFormNamesToLinks(html, retrieval = null) {
+            // Convert common form names to clickable links that download actual documents
+            let result = html;
+
+            // Build a searchable database of documents from retrieval data
+            const documentMap = {};
+            if (retrieval && retrieval.length > 0) {
+                retrieval.forEach(item => {
+                    const filename = item.filename || '';
+                    const filename_lower = filename.toLowerCase();
+
+                    // Only add valid documents (must have file extension or be a valid path)
+                    // Validation filters out JSON error responses and broken links
+                    const hasFileExt = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|rar|jpg|png|gif)$/i.test(filename);
+                    const isValidPath = filename.includes('/') && !filename.includes('?') && !filename.includes('&');
+
+                    if (!hasFileExt && !isValidPath) {
+                        return; // Skip invalid document references
+                    }
+
+                    // Store by various keys for matching
+                    for (const [formName, searchQuery] of Object.entries(FORM_CATALOG)) {
+                        if (filename_lower.includes(searchQuery.toLowerCase())) {
+                            documentMap[formName] = {
+                                filename: filename,
+                                isUrl: filename.startsWith('http://') || filename.startsWith('https://')
+                            };
+                        }
+                    }
+                });
+            }
+
+            // For each form in the catalog, replace mentions with clickable links
+            for (const [formName, searchQuery] of Object.entries(FORM_CATALOG)) {
+                const escapedFormName = formName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`\\b${escapedFormName}\\b`, 'gi');
+
+                result = result.replace(regex, (match) => {
+                    const docInfo = documentMap[formName];
+
+                    if (docInfo) {
+                        // Document found in RAG - create download link
+                        if (docInfo.isUrl) {
+                            return `<a href="${docInfo.filename}" target="_blank" rel="noopener noreferrer" class="form-link" title="Muat turun ${match}">📋 ${match}</a>`;
+                        } else {
+                            return `<a class="form-link" onclick="downloadDocument('${docInfo.filename.replace(/'/g, "&#39;")}')" title="Muat turun ${match}">📋 ${match}</a>`;
+                        }
+                    } else {
+                        // Document NOT in RAG - return as plain text, no link
+                        return match;
+                    }
+                });
+            }
+
+            return result;
+        }
+
+        function loadFeedbackRatings() {
+            try {
+                const stored = sessionStorage.getItem(FEEDBACK_STORAGE_KEY);
+                if (stored) {
+                    feedbackRatings = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error('Ralat memuatkan rating:', e);
+            }
+        }
+
+        function saveFeedbackRatings() {
+            try {
+                sessionStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(feedbackRatings));
+            } catch (e) {
+                console.error('Ralat menyimpan rating:', e);
+            }
+        }
+
+        function loadConversationHistory() {
+            try {
+                const stored = sessionStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    conversationHistory = JSON.parse(stored);
+                    return true;
+                }
+            } catch (e) {
+                console.error('Ralat memuatkan sejarah perbualan:', e);
+            }
+            return false;
+        }
+
+        function saveConversationHistory() {
+            try {
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify(conversationHistory));
+            } catch (e) {
+                console.error('Ralat menyimpan sejarah perbualan:', e);
+            }
+        }
+
+        function clearConversationHistory() {
+            conversationHistory = [];
+            sessionStorage.removeItem(STORAGE_KEY);
+            chatHistory.innerHTML = '';
+            addWelcomeMessage();
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        /**
+         * renderMarkdown(text)
+         *
+         * Converts markdown-style text to HTML for display in chat.
+         *
+         * Features:
+         * - Headers (# ## ### ####)
+         * - Lists (bullets: *, -, numbered: 1. 2.)
+         * - Text formatting (**bold**, *italic*, __underline__, ~~strike~~)
+         * - Code blocks (``` ```)
+         * - Links ([text](url))
+         * - Tables (| header | data |)
+         * - Blockquotes (> text)
+         *
+         * LIST HEADER DETECTION (Updated 2026-02-01):
+         * - Lines ending with ':' only (e.g., "Dokumen yang diperlukan:")
+         *   are rendered as bold cyan headers
+         * - Lines with text after ':' (e.g., "Alasan: ada teks") are regular items
+         * - This provides proper visual hierarchy for nested lists
+         *
+         * PROCESSING ORDER:
+         * 1. Escape HTML special characters
+         * 2. Process lists (line-by-line with header detection)
+         * 3. Process text formatting
+         * 4. Convert line breaks
+         * 5. Clean up extra spacing
+         */
+        function renderMarkdown(text) {
+            let html = escapeHtml(text);
+
+            // ===== CLEANUP INCOMPLETE/EMPTY TAGS =====
+            html = html.replace(/&lt;&gt;\s*/g, '• ');
+            html = html.replace(/\[\s*\u200B?&lt;&gt;\u200B?\s*\]/g, '');
+            html = html.replace(/\[\u200B?&lt;&gt;\u200B?\]/g, '');
+            html = html.replace(/&lt;\s*&gt;/g, '');
+
+            // ===== REFERENCE BADGES (do first to avoid conflicts) =====
+            html = html.replace(/\[{2,3}C(\d+)\]{2,3}/g, '<<REF:$1>>');
+            html = html.replace(/\[C(\d+)\]/g, '<<REF:$1>>');
+
+            // ===== CODE BLOCKS =====
+            html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre class="chat-code"><code>$2</code></pre>');
+            html = html.replace(/`([^`]+)`/g, '<code class="chat-inline-code">$1</code>');
+
+            // ===== HEADERS =====
+            html = html.replace(/^#### (.+)$/gm, '<h5 class="chat-heading h5">$1</h5>');
+            html = html.replace(/^### (.+)$/gm, '<h4 class="chat-heading h4">$1</h4>');
+            html = html.replace(/^## (.+)$/gm, '<h3 class="chat-heading h3">$1</h3>');
+            html = html.replace(/^# (.+)$/gm, '<h2 class="chat-heading h2">$1</h2>');
+
+            // ===== SPECIAL LABELS =====
+            html = html.replace(/(Reference [Dd]ocument:?|Document [Rr]eference:?|Rujukan:?|Dokumen Rujukan:?)/g, '<em><u class="rujukan-label">$1</u></em>');
+
+            // ===== TABLES =====
+            html = html.replace(/(\|.+\|[\r\n]+\|[-:\| ]+\|[\r\n]+)((?:\|.+\|[\r\n]*)+)/g, function (match, header, body) {
+                const headerCells = header.split('\n')[0].split('|').filter(cell => cell.trim() !== '');
+                let tableHtml = '<table class="chat-table"><thead><tr>';
+                headerCells.forEach(cell => {
+                    tableHtml += '<th>' + cell.trim() + '</th>';
+                });
+                tableHtml += '</tr></thead><tbody>';
+
+                const bodyRows = body.trim().split('\n').filter(row => row.trim() !== '');
+                bodyRows.forEach(row => {
+                    const cells = row.split('|').filter(cell => cell.trim() !== '');
+                    tableHtml += '<tr>';
+                    cells.forEach(cell => {
+                        tableHtml += '<td>' + cell.trim() + '</td>';
+                    });
+                    tableHtml += '</tr>';
+                });
+                tableHtml += '</tbody></table>';
+                return tableHtml;
+            });
+
+            // ===== HORIZONTAL RULE =====
+            html = html.replace(/^[-*_]{3,}$/gm, '<hr class="chat-hr">');
+
+            // ===== BLOCKQUOTES =====
+            html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="chat-quote">$1</blockquote>');
+
+            // ===== LISTS =====
+            // Process lists line by line for reliable header detection and formatting
+            // Updated 2026-02-01: New implementation for proper bullet formatting
+            //
+            // Algorithm:
+            // 1. Split HTML by newlines
+            // 2. For each line, check if it's a list item (bullet or numbered)
+            // 3. If bullet item:
+            //    - Check if content ends with ':' only (header pattern)
+            //    - Headers: render as <li class="list-header-item"><strong>
+            //    - Regular: render as <li class="bullet">
+            // 4. If numbered item: render as <li class="numbered">
+            // 5. Auto-wrap consecutive items in <ul class="chat-list">
+            // 6. Close list when non-item line encountered
+            //
+            // Examples:
+            // "* Dokumen yang diperlukan:" → Header (ends with : only)
+            // "* Alasan: text after colon" → Regular item (text after :)
+            // "* Regular item" → Regular item (no colon)
+            // "1. Numbered item" → Numbered item
+            //
+            const lines = html.split('\n');
+            const processedLines = [];
+            let inList = false;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmed = line.trim();
+
+                // Check for bullet items (- or *)
+                const bulletMatch = trimmed.match(/^[\-\*]\s+(.+)$/);
+                // Check for numbered items (1. 2. etc)
+                const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+
+                if (bulletMatch) {
+                    const content = bulletMatch[1];
+                    // Check if this is a header line:
+                    // - Must match pattern: text ending with colon (no text after)
+                    // - Regex: ^[^:]+:$ matches "word:word:" (any text, then single colon at end)
+                    // - Second check ensures no space+text after colon
+                    if (content.match(/^[^:]+:$/) && !content.match(/:\s+\S/)) {
+                        // This is a list header - render as bold cyan text
+                        if (!inList) {
+                            processedLines.push('<ul class="chat-list">');
+                            inList = true;
+                        }
+                        processedLines.push('<li class="list-header-item"><strong>' + content + '</strong></li>');
+                    } else {
+                        // Regular bullet item
+                        if (!inList) {
+                            processedLines.push('<ul class="chat-list">');
+                            inList = true;
+                        }
+                        processedLines.push('<li class="bullet">' + content + '</li>');
+                    }
+                } else if (numberedMatch) {
+                    // Numbered item
+                    if (!inList) {
+                        processedLines.push('<ul class="chat-list">');
+                        inList = true;
+                    }
+                    processedLines.push('<li class="numbered" data-num="' + numberedMatch[1] + '">' + numberedMatch[2] + '</li>');
+                } else {
+                    // Not a list item - close list if we were in one
+                    if (inList && trimmed !== '') {
+                        processedLines.push('</ul>');
+                        inList = false;
+                    }
+                    processedLines.push(line);
+                }
+            }
+
+            // Close list if still open
+            if (inList) {
+                processedLines.push('</ul>');
+            }
+
+            html = processedLines.join('\n');
+
+            // ===== TEXT FORMATTING =====
+            html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+            html = html.replace(/___(.+?)___/g, '<strong><em>$1</em></strong>');
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+            html = html.replace(/(?<![*_])\*([^*\n]+?)\*(?![*])/g, '<em>$1</em>');
+            html = html.replace(/(?<![_*])_([^_\n]+?)_(?![_])/g, '<em>$1</em>');
+            html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+
+            // ===== LINKS =====
+            // Standard markdown links [text](url)
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>');
+
+            // Auto-link URLs that aren't already in anchor tags
+            html = html.replace(/(?<!href="|">)(https?:\/\/[^\s<>"']+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>');
+
+            // ===== RESTORE REFERENCE BADGES =====
+            html = html.replace(/&lt;&lt;REF:(\d+)&gt;&gt;/g, '<span class="ref-badge">Rujukan $1</span>');
+            html = html.replace(/(<\/span>)(<span class="ref-badge">)/g, '$1 $2');
+
+            // ===== LINE BREAKS =====
+            html = html.replace(/\n{2,}/g, '<br><br>');
+            html = html.replace(/\n/g, '<br>');
+
+            // ===== CLEANUP =====
+            // Remove <br> before block elements
+            html = html.replace(/<br>(<h[2-5]|<ul|<\/ul>|<li|<\/li>|<pre|<\/pre>|<blockquote|<\/blockquote>|<hr)/g, '$1');
+            // Remove <br> after block elements
+            html = html.replace(/(<\/h[2-5]>|<ul[^>]*>|<\/ul>|<li[^>]*>|<\/li>|<\/pre>|<\/blockquote>|<hr[^>]*>)<br>/g, '$1');
+            // Remove multiple consecutive <br> tags (max 2)
+            html = html.replace(/(<br>){3,}/g, '<br><br>');
+            // Remove <br> inside lists
+            html = html.replace(/<ul([^>]*)><br>/g, '<ul$1>');
+            html = html.replace(/<br><\/ul>/g, '</ul>');
+
+            return html;
+        }
+
+        function formatTimestamp() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const day = now.getDate();
+            const monthNames = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+            const month = monthNames[now.getMonth()];
+            const year = now.getFullYear();
+            const period = hours < 12 ? 'pg' : 'ptg';
+            const displayHour = hours % 12 || 12;
+            return `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}, ${day} ${month} ${year}`;
+        }
+
+        function getFileTypeIcon(filename) {
+            if (!filename) return '📄';
+            const ext = filename.toLowerCase().split('.').pop();
+            const iconMap = {
+                'pdf': '📕',
+                'doc': '📗',
+                'docx': '📗',
+                'xls': '📊',
+                'xlsx': '📊',
+                'ppt': '🎯',
+                'pptx': '🎯',
+                'txt': '📝',
+                'zip': '📦',
+                'rar': '📦',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🖼️',
+                'mp4': '🎬',
+                'mp3': '🎵',
+                'borang': '📋',
+                'form': '📋'
+            };
+            return iconMap[ext] || '📄';
+        }
+
+        function getFileTypeLabel(filename) {
+            if (!filename) return 'Dokumen';
+            const ext = filename.toLowerCase().split('.').pop().toUpperCase();
+            return ext || 'Dokumen';
+        }
+
+        function downloadDocument(filename) {
+            // Create download link
+            const encodedPath = encodeURIComponent(filename);
+            const downloadUrl = `/api/download/${encodedPath}`;
+
+            // Create a temporary anchor element to trigger download
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename.split('/').pop(); // Use filename without path
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function renderRetrievalSection(retrieval) {
+            if (!retrieval || retrieval.length === 0) return '';
+
+            const sectionId = 'retrieval-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+            // Simple collapsed references section
+            let html = `<div class="retrieval-section collapsed" id="${sectionId}">`;
+            html += `<div class="retrieval-header" onclick="toggleRetrieval('${sectionId}')">`;
+            html += `<span class="retrieval-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></span>`;
+            html += '<span class="retrieval-header-text">📄 Rujukan Dokumen</span>';
+            html += `<span class="retrieval-count">${retrieval.length}</span>`;
+            html += '</div>';
+
+            html += '<div class="retrieval-content">';
+
+            retrieval.forEach((item, index) => {
+                const filename = item.filename || 'Dokumen';
+                const isUrl = filename.startsWith('http://') || filename.startsWith('https://');
+
+                html += '<div class="retrieval-item">';
+
+                if (isUrl) {
+                    html += `<a href="${escapeHtml(filename)}" target="_blank" rel="noopener noreferrer" class="retrieval-filename">🔗 ${escapeHtml(filename)}</a>`;
+                } else {
+                    html += `<span class="retrieval-filename">${escapeHtml(filename)}</span>`;
+                }
+
+                html += '</div>';
+            });
+
+            html += '</div></div>';
+            return html;
+        }
+
+        function toggleRetrieval(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.classList.toggle('collapsed');
+            }
+        }
+
+        function renderRatingButtons(messageId, rating, comment) {
+            let html = '<div class="rating-container">';
+            const thumbsUpActive = rating === 'thumbs_up' ? ' active thumbs-up' : '';
+            const thumbsDownActive = rating === 'thumbs_down' ? ' active thumbs-down' : '';
+
+            html += `<button class="rating-btn${thumbsUpActive}" onclick="handleRating('${messageId}', 'thumbs_up')">👍 Berguna</button>`;
+            html += `<button class="rating-btn${thumbsDownActive}" onclick="handleRating('${messageId}', 'thumbs_down')">👎 Kurang Berguna</button>`;
+            html += `<button class="rating-btn comment-btn" onclick="openCommentModal('${messageId}')">💬 Komen${comment ? '<span class="comment-badge">📝</span>' : ''}</button>`;
+
+            if (rating) {
+                html += '<div class="thank-you-msg">Terima kasih atas maklum balas anda!</div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function addMessage(role, text, retrieval = null, timestamp = null, messageId = null) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'chat-message ' + (role === 'user' ? 'user' : 'bot');
+            if (messageId) {
+                wrapper.setAttribute('data-message-id', messageId);
+            }
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+
+            if (role === 'bot') {
+                let html = renderMarkdown(text);
+                // Convert form names to clickable links with actual documents from retrieval
+                html = convertFormNamesToLinks(html, retrieval);
+                bubble.innerHTML = html;
+                if (retrieval && retrieval.length > 0) {
+                    bubble.innerHTML += renderRetrievalSection(retrieval);
+                }
+                // Add rating buttons for bot messages
+                if (messageId) {
+                    const rating = feedbackRatings[messageId]?.rating;
+                    const comment = feedbackRatings[messageId]?.comment;
+                    bubble.innerHTML += renderRatingButtons(messageId, rating, comment);
+                }
+            } else {
+                bubble.textContent = text;
+            }
+
+            const time = document.createElement('div');
+            time.className = 'chat-time';
+            time.textContent = timestamp || formatTimestamp();
+
+            wrapper.appendChild(bubble);
+            wrapper.appendChild(time);
+            chatHistory.appendChild(wrapper);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function addWelcomeMessage() {
+            addMessage('bot', WELCOME_MESSAGE, null, 'Sedia membantu');
+        }
+
+        function restoreConversationFromHistory() {
+            conversationHistory.forEach(msg => {
+                addMessage(msg.role, msg.content, msg.retrieval, msg.timestamp, msg.id);
+            });
+        }
+
+        async function sendQuestion() {
+            const message = questionInput.value.trim();
+            if (!message) return;
+
+            // Generate message IDs
+            const userMessageId = generateMessageId();
+            const userTimestamp = formatTimestamp();
+
+            // Add user message to UI
+            addMessage('user', message, null, userTimestamp, userMessageId);
+
+            // Add to conversation history
+            conversationHistory.push({
+                role: 'user',
+                content: message,
+                timestamp: userTimestamp,
+                id: userMessageId
+            });
+            saveConversationHistory();
+
+            questionInput.value = '';
+            questionInput.style.height = 'auto';
+            askBtn.disabled = true;
+            askBtn.innerHTML = '<span>Memproses...</span>';
+
+            try {
+                // Send full conversation history to backend
+                const messagesPayload = conversationHistory.map(msg => ({
+                    role: msg.role === 'bot' ? 'assistant' : msg.role,
+                    content: msg.content
+                }));
+
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: messagesPayload })
+                });
+
+                const botTimestamp = formatTimestamp();
+                const botMessageId = generateMessageId();
+
+                if (!res.ok) {
+                    let msg = 'Maaf, ralat telah berlaku. Sila cuba semula atau hubungi JKST di 09-623 2323 untuk bantuan.';
+                    try {
+                        const err = await res.json();
+                        if (err && err.detail) msg = err.detail;
+                    } catch (e) { }
+                    addMessage('bot', msg, null, botTimestamp, botMessageId);
+
+                    // Add error response to history
+                    conversationHistory.push({
+                        role: 'bot',
+                        content: msg,
+                        timestamp: botTimestamp,
+                        id: botMessageId
+                    });
+                    saveConversationHistory();
+                } else {
+                    const data = await res.json();
+                    const replyText = data.reply || 'Tiada respons diterima. Sila cuba semula dengan soalan yang berbeza.';
+                    const retrieval = data.retrieval || null;
+
+                    addMessage('bot', replyText, retrieval, botTimestamp, botMessageId);
+
+                    // Add bot response to history
+                    conversationHistory.push({
+                        role: 'bot',
+                        content: replyText,
+                        retrieval: retrieval,
+                        timestamp: botTimestamp,
+                        id: botMessageId
+                    });
+                    saveConversationHistory();
+                }
+            } catch (err) {
+                const botTimestamp = formatTimestamp();
+                const botMessageId = generateMessageId();
+                const errorMsg = 'Maaf, ralat rangkaian telah berlaku. Sila cuba semula kemudian atau hubungi JKST di 09-623 2323 untuk bantuan.';
+                addMessage('bot', errorMsg, null, botTimestamp, botMessageId);
+
+                conversationHistory.push({
+                    role: 'bot',
+                    content: errorMsg,
+                    timestamp: botTimestamp,
+                    id: botMessageId
+                });
+                saveConversationHistory();
+            } finally {
+                askBtn.disabled = false;
+                askBtn.innerHTML = '<span>Hantar</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+                questionInput.focus();
+            }
+        }
+
+        function handleRating(messageId, ratingType) {
+            const currentRating = feedbackRatings[messageId]?.rating;
+
+            // Toggle behavior: click again to remove rating
+            if (currentRating === ratingType) {
+                delete feedbackRatings[messageId];
+            } else {
+                // Update or create new rating
+                if (!feedbackRatings[messageId]) {
+                    feedbackRatings[messageId] = {};
+                }
+                feedbackRatings[messageId].rating = ratingType;
+            }
+
+            saveFeedbackRatings();
+            updateRatingButtonsUI(messageId);
+
+            // Send feedback to backend
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                const bubble = messageElement.querySelector('.bubble');
+                const messageText = bubble ? bubble.innerText : '';
+
+                // Find corresponding user question
+                const msgIndex = conversationHistory.findIndex(m => m.id === messageId);
+                let userQuestion = '';
+                if (msgIndex > 0) {
+                    userQuestion = conversationHistory[msgIndex - 1]?.content || '';
+                }
+
+                const feedbackData = {
+                    message_id: messageId,
+                    timestamp: new Date().toISOString(),
+                    user_question: userQuestion || '[Question not found]',
+                    ai_response: messageText,
+                    rating: currentRating === ratingType ? null : ratingType,
+                    comment: feedbackRatings[messageId]?.comment || null,
+                    retrieval_sources: 0
+                };
+
+                sendFeedbackToBackend(messageId, feedbackData);
+            }
+        }
+
+        function openCommentModal(messageId) {
+            currentFeedbackMessageId = messageId;
+            const modal = document.getElementById('feedbackModal');
+            const textarea = document.getElementById('feedbackComment');
+
+            // Load existing comment if any
+            const existingComment = feedbackRatings[messageId]?.comment || '';
+            textarea.value = existingComment;
+            updateCharCount();
+
+            modal.classList.add('active');
+            textarea.focus();
+        }
+
+        function closeCommentModal() {
+            const modal = document.getElementById('feedbackModal');
+            modal.classList.remove('active');
+            currentFeedbackMessageId = null;
+            document.getElementById('feedbackComment').value = '';
+            updateCharCount();
+        }
+
+        function updateCharCount() {
+            const textarea = document.getElementById('feedbackComment');
+            const counter = document.querySelector('.char-counter');
+            const count = textarea.value.length;
+            counter.textContent = `${count}/500 aksara`;
+        }
+
+        function submitComment() {
+            if (!currentFeedbackMessageId) return;
+
+            const textarea = document.getElementById('feedbackComment');
+            const comment = textarea.value.trim();
+
+            // Initialize feedback for this message if not exists
+            if (!feedbackRatings[currentFeedbackMessageId]) {
+                feedbackRatings[currentFeedbackMessageId] = {};
+            }
+
+            // Save comment (empty string if no comment)
+            feedbackRatings[currentFeedbackMessageId].comment = comment || null;
+            saveFeedbackRatings();
+
+            // Update UI
+            updateRatingButtonsUI(currentFeedbackMessageId);
+
+            // Send to backend
+            const messageElement = document.querySelector(`[data-message-id="${currentFeedbackMessageId}"]`);
+            if (messageElement) {
+                const bubble = messageElement.querySelector('.bubble');
+                const messageText = bubble ? bubble.innerText : '';
+
+                // Find corresponding user question
+                const msgIndex = conversationHistory.findIndex(m => m.id === currentFeedbackMessageId);
+                let userQuestion = '';
+                if (msgIndex > 0) {
+                    userQuestion = conversationHistory[msgIndex - 1]?.content || '';
+                }
+
+                const feedbackData = {
+                    message_id: currentFeedbackMessageId,
+                    timestamp: new Date().toISOString(),
+                    user_question: userQuestion || '[Question not found]',
+                    ai_response: messageText,
+                    rating: feedbackRatings[currentFeedbackMessageId]?.rating || null,
+                    comment: comment || null,
+                    retrieval_sources: 0
+                };
+
+                sendFeedbackToBackend(currentFeedbackMessageId, feedbackData);
+            }
+
+            closeCommentModal();
+        }
+
+        function updateRatingButtonsUI(messageId) {
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageElement) return;
+
+            const bubble = messageElement.querySelector('.bubble');
+            if (!bubble) return;
+
+            // Remove old rating container
+            const oldContainer = bubble.querySelector('.rating-container');
+            if (oldContainer) {
+                oldContainer.remove();
+            }
+
+            // Add new rating container
+            const rating = feedbackRatings[messageId]?.rating;
+            const comment = feedbackRatings[messageId]?.comment;
+            const newContainer = document.createElement('div');
+            newContainer.innerHTML = renderRatingButtons(messageId, rating, comment);
+            bubble.appendChild(newContainer.firstElementChild);
+        }
+
+        function sendFeedbackToBackend(messageId, feedbackData) {
+            fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(feedbackData)
+            }).catch(err => {
+                console.error('Ralat menghantar maklum balas:', err);
+            });
+        }
+
+        // Event listeners
+        askBtn.addEventListener('click', sendQuestion);
+
+        questionInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendQuestion();
+            }
+        });
+
+        // Auto-resize textarea
+        questionInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Clear chat button
+        clearChatBtn.addEventListener('click', function () {
+            if (confirm('Adakah anda pasti mahu memadam sejarah perbualan?')) {
+                clearConversationHistory();
+            }
+        });
+
+        // Modal event listeners
+        const feedbackModal = document.getElementById('feedbackModal');
+        const modalCloseBtn = document.querySelector('.modal-close');
+        const btnCancel = document.querySelector('.btn-cancel');
+        const btnSubmit = document.querySelector('.btn-submit');
+        const feedbackTextarea = document.getElementById('feedbackComment');
+
+        modalCloseBtn.addEventListener('click', closeCommentModal);
+        btnCancel.addEventListener('click', closeCommentModal);
+        btnSubmit.addEventListener('click', submitComment);
+
+        feedbackTextarea.addEventListener('input', updateCharCount);
+
+        // Close modal on backdrop click
+        feedbackModal.addEventListener('click', function (e) {
+            if (e.target === feedbackModal) {
+                closeCommentModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && feedbackModal.classList.contains('active')) {
+                closeCommentModal();
+            }
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            loadFeedbackRatings();
+            const hasHistory = loadConversationHistory();
+            if (hasHistory && conversationHistory.length > 0) {
+                restoreConversationFromHistory();
+            } else {
+                addWelcomeMessage();
+            }
+            questionInput.focus();
+        });
+    </script>
+</body>
+
+</html>

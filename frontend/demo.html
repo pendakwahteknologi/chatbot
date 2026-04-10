@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Comparison Demo — JKST AI</title>
+    <link rel="icon" type="image/png" href="/jkst-logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-dark: #0a0e17; --text-primary: #fff; --text-secondary: #a0a8b8; --font-main: 'Space Grotesk', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-main); background: var(--bg-dark); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+        .ambient-light { position: fixed; top: -20%; left: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(147,51,234,0.12) 0%, transparent 70%); filter: blur(80px); z-index: -1; }
+        .ambient-light-2 { position: fixed; bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%); filter: blur(100px); z-index: -1; }
+        .header { text-align: center; margin-bottom: 3rem; }
+        .header h1 { font-size: 2.8rem; font-weight: 700; margin-bottom: 0.5rem; background: linear-gradient(135deg, #60a5fa, #a78bfa, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: var(--text-secondary); font-size: 1.1rem; }
+        .badge { display: inline-block; padding: 6px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; }
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 1200px; width: 100%; }
+        @media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 2rem; text-align: center; transition: all 0.3s; cursor: pointer; text-decoration: none; color: inherit; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); }
+        .card-cloud { border-top: 3px solid #4285F4; } .card-cloud:hover { box-shadow: 0 8px 40px rgba(66,133,244,0.15); }
+        .card-local { border-top: 3px solid #16a34a; } .card-local:hover { box-shadow: 0 8px 40px rgba(22,163,74,0.15); }
+        .card-ultra { border-top: 3px solid #9333ea; } .card-ultra:hover { box-shadow: 0 8px 40px rgba(147,51,234,0.15); }
+        .card-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .card h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .card-cloud h2 { color: #60a5fa; } .card-local h2 { color: #4ade80; } .card-ultra h2 { color: #c084fc; }
+        .card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; }
+        .card-features { text-align: left; margin-bottom: 1.5rem; }
+        .feature-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.82rem; }
+        .feature-name { color: var(--text-secondary); } .feature-on { color: #4ade80; font-weight: 600; } .feature-off { color: #64748b; }
+        .card-btn { display: inline-block; padding: 12px 32px; border-radius: 12px; font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: all 0.2s; }
+        .card-cloud .card-btn { background: linear-gradient(135deg, #4285F4, #34A853); color: white; }
+        .card-local .card-btn { background: linear-gradient(135deg, #16a34a, #4ade80); color: white; }
+        .card-ultra .card-btn { background: linear-gradient(135deg, #9333ea, #f59e0b); color: white; }
+        .card-btn:hover { opacity: 0.9; transform: scale(1.02); }
+        .vs-badge { position: absolute; top: 12px; right: 12px; padding: 3px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; }
+        .card-cloud .vs-badge { background: rgba(66,133,244,0.15); color: #60a5fa; }
+        .card-local .vs-badge { background: rgba(22,163,74,0.15); color: #4ade80; }
+        .card-ultra .vs-badge { background: rgba(147,51,234,0.15); color: #c084fc; }
+        .footer { margin-top: 3rem; text-align: center; color: var(--text-secondary); font-size: 0.8rem; }
+        .footer a { color: var(--text-secondary); text-decoration: none; } .footer a:hover { color: white; }
+    </style>
+</head>
+<body>
+    <div class="ambient-light"></div>
+    <div class="ambient-light-2"></div>
+    <div class="header">
+        <div class="badge">Kelas RAG — Perbandingan 3 Mod</div>
+        <h1>RAG Comparison Demo</h1>
+        <p>Tanya soalan yang sama di ketiga-tiga mod dan bandingkan hasilnya</p>
+    </div>
+    <div class="cards">
+        <a href="/" class="card card-cloud">
+            <span class="vs-badge">MODE 1</span>
+            <div class="card-icon">☁️</div>
+            <h2>Cloud RAG</h2>
+            <p>Sistem penuh menggunakan Google Cloud Platform</p>
+            <div class="card-features">
+                <div class="feature-row"><span class="feature-name">LLM</span><span class="feature-on">Gemini 2.0 Flash</span></div>
+                <div class="feature-row"><span class="feature-name">Retrieval</span><span class="feature-on">Google Vertex AI RAG</span></div>
+                <div class="feature-row"><span class="feature-name">Embeddings</span><span class="feature-on">Google (Cloud)</span></div>
+                <div class="feature-row"><span class="feature-name">Reranking</span><span class="feature-on">Cohere rerank-v3.5</span></div>
+                <div class="feature-row"><span class="feature-name">Query Expansion</span><span class="feature-off">—</span></div>
+                <div class="feature-row"><span class="feature-name">Hybrid Search</span><span class="feature-off">—</span></div>
+                <div class="feature-row"><span class="feature-name">Self-Evaluation</span><span class="feature-off">—</span></div>
+            </div>
+            <span class="card-btn">Buka Cloud Mode</span>
+        </a>
+        <a href="/local.html" class="card card-local">
+            <span class="vs-badge">MODE 2</span>
+            <div class="card-icon">🏠</div>
+            <h2>Local RAG</h2>
+            <p>Komponen RAG tempatan sepenuhnya (kecuali LLM)</p>
+            <div class="card-features">
+                <div class="feature-row"><span class="feature-name">LLM</span><span class="feature-on">Gemini (sementara)</span></div>
+                <div class="feature-row"><span class="feature-name">Retrieval</span><span class="feature-on">ChromaDB (tempatan)</span></div>
+                <div class="feature-row"><span class="feature-name">Embeddings</span><span class="feature-on">all-MiniLM-L6-v2</span></div>
+                <div class="feature-row"><span class="feature-name">Reranking</span><span class="feature-on">Keyword overlap</span></div>
+                <div class="feature-row"><span class="feature-name">Query Expansion</span><span class="feature-off">—</span></div>
+                <div class="feature-row"><span class="feature-name">Hybrid Search</span><span class="feature-off">—</span></div>
+                <div class="feature-row"><span class="feature-name">Self-Evaluation</span><span class="feature-off">—</span></div>
+            </div>
+            <span class="card-btn">Buka Local Mode</span>
+        </a>
+        <a href="/ultra.html" class="card card-ultra">
+            <span class="vs-badge">MODE 3</span>
+            <div class="card-icon">⚡</div>
+            <h2>Ultra RAG</h2>
+            <p>Semua ciri lanjutan diaktifkan — prestasi maksimum</p>
+            <div class="card-features">
+                <div class="feature-row"><span class="feature-name">LLM</span><span class="feature-on">Gemini + CoT</span></div>
+                <div class="feature-row"><span class="feature-name">Retrieval</span><span class="feature-on">ChromaDB + BM25</span></div>
+                <div class="feature-row"><span class="feature-name">Embeddings</span><span class="feature-on">all-MiniLM-L6-v2</span></div>
+                <div class="feature-row"><span class="feature-name">Reranking</span><span class="feature-on">Cross-Encoder</span></div>
+                <div class="feature-row"><span class="feature-name">Query Expansion</span><span class="feature-on">3 variasi LLM</span></div>
+                <div class="feature-row"><span class="feature-name">Hybrid Search</span><span class="feature-on">Vector + BM25 RRF</span></div>
+                <div class="feature-row"><span class="feature-name">Self-Evaluation</span><span class="feature-on">Skor 1-5</span></div>
+            </div>
+            <span class="card-btn">Buka Ultra Mode</span>
+        </a>
+    </div>
+    <div class="footer">
+        <p>Pembantu Pintar JKST &copy; 2026 | <a href="https://syariah.terengganu.gov.my" target="_blank">JKST</a></p>
+    </div>
+</body>
+</html>

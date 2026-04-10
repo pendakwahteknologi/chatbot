@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="ms">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senibina Sistem - Pembantu Pintar JKST</title>
+    <link rel="icon" type="image/png" href="/jkst-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a8b8;
+            --accent-blue: #0061EB;
+            --accent-cyan: #00f2ff;
+            --accent-green: #22c55e;
+            --accent-purple: #a855f7;
+            --accent-orange: #f59e0b;
+            --accent-pink: #ec4899;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --font-main: 'Space Grotesk', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Background Effects */
+        .ambient-light {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(0, 97, 235, 0.15) 0%, transparent 70%);
+            filter: blur(80px);
+            animation: float 10s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        .ambient-light-2 {
+            position: fixed;
+            bottom: -10%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(0, 242, 255, 0.1) 0%, transparent 70%);
+            filter: blur(100px);
+            animation: float 15s ease-in-out infinite reverse;
+            z-index: -1;
+        }
+
+        .ambient-light-3 {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40vw;
+            height: 40vw;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, transparent 70%);
+            filter: blur(100px);
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, 20px); }
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .page-title {
+            flex: 1;
+        }
+
+        .page-title h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-title .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Section */
+        .section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-icon {
+            font-size: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .section-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Hero Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(0, 97, 235, 0.2) 0%, rgba(168, 85, 247, 0.15) 50%, rgba(0, 242, 255, 0.1) 100%);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300f2ff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 100px;
+            color: var(--accent-cyan);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+
+        .diagram-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-width: 800px;
+        }
+
+        .diagram-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .diagram-box {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+            min-width: 140px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .diagram-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .diagram-box.user {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #0052cc 100%);
+            border: 2px solid var(--accent-blue);
+        }
+
+        .diagram-box.frontend {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, #00b8d4 100%);
+            border: 2px solid var(--accent-cyan);
+            color: #000;
+        }
+
+        .diagram-box.backend {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #16a34a 100%);
+            border: 2px solid var(--accent-green);
+            color: #000;
+        }
+
+        .diagram-box.ai {
+            background: linear-gradient(135deg, var(--accent-purple) 0%, #9333ea 100%);
+            border: 2px solid var(--accent-purple);
+        }
+
+        .diagram-box.database {
+            background: linear-gradient(135deg, var(--accent-orange) 0%, #ea580c 100%);
+            border: 2px solid var(--accent-orange);
+            color: #000;
+        }
+
+        .diagram-box.external {
+            background: linear-gradient(135deg, var(--accent-pink) 0%, #db2777 100%);
+            border: 2px solid var(--accent-pink);
+        }
+
+        .diagram-box-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .diagram-box-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .diagram-box-subtitle {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .diagram-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+        }
+
+        .diagram-arrow.vertical {
+            transform: rotate(90deg);
+            margin: 0.5rem 0;
+        }
+
+        .diagram-arrow-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            position: absolute;
+            white-space: nowrap;
+        }
+
+        .diagram-group {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed var(--glass-border);
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .diagram-group-label {
+            position: absolute;
+            top: -0.75rem;
+            left: 1rem;
+            background: var(--bg-dark);
+            padding: 0.25rem 0.75rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            border-radius: 4px;
+        }
+
+        /* Flow Diagram */
+        .flow-container {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            margin: 2rem 0;
+            overflow-x: auto;
+            padding: 1rem 0;
+        }
+
+        .flow-step {
+            flex: 1;
+            min-width: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .flow-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -15px;
+            top: 40px;
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), transparent);
+        }
+
+        .flow-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-cyan) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 97, 235, 0.4);
+        }
+
+        .flow-content {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .flow-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .flow-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .flow-description {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Tech Stack Grid */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .tech-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .tech-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-4px);
+        }
+
+        .tech-card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .tech-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .tech-card-icon.frontend { background: linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, rgba(0, 242, 255, 0.1) 100%); }
+        .tech-card-icon.backend { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%); }
+        .tech-card-icon.ai { background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(168, 85, 247, 0.1) 100%); }
+        .tech-card-icon.database { background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%); }
+        .tech-card-icon.infra { background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%); }
+        .tech-card-icon.security { background: linear-gradient(135deg, rgba(0, 97, 235, 0.2) 0%, rgba(0, 97, 235, 0.1) 100%); }
+
+        .tech-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .tech-card-category {
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tech-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tech-tag {
+            padding: 0.35rem 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .feature-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .feature-item:hover {
+            background: rgba(0, 97, 235, 0.1);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-cyan) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 97, 235, 0.1) 0%, rgba(0, 242, 255, 0.05) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Security Section */
+        .security-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .security-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 10px;
+        }
+
+        .security-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .security-check svg {
+            width: 14px;
+            height: 14px;
+            color: #000;
+        }
+
+        .security-text {
+            font-size: 0.85rem;
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .page-footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        .page-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .hero-title {
+                font-size: 1.5rem;
+            }
+
+            .section {
+                padding: 1.25rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .diagram-container {
+                min-width: 600px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-light"></div>
+    <div class="ambient-light-2"></div>
+    <div class="ambient-light-3"></div>
+
+    <main class="main-container">
+        <header class="page-header">
+            <a href="/" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Kembali
+            </a>
+            <div class="page-title">
+                <h1>Senibina Sistem</h1>
+                <p class="subtitle">Dokumentasi teknikal Pembantu Pintar JKST</p>
+            </div>
+        </header>
+
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+            <div class="hero-content">
+                <span class="hero-badge">Enterprise AI Solution</span>
+                <h2 class="hero-title">Retrieval-Augmented Generation (RAG)</h2>
+                <p class="hero-subtitle">Sistem AI pintar yang menggabungkan kekuatan Large Language Model dengan pangkalan pengetahuan JKST untuk memberikan jawapan yang tepat dan boleh dipercayai.</p>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">500+</div>
+                <div class="stat-label">Dokumen Diindeks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">&lt;3s</div>
+                <div class="stat-label">Masa Respons</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">99.9%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 Laluan</div>
+                <div class="stat-label">Web + Telegram + Suara</div>
+            </div>
+        </div>
+
+        <!-- System Architecture -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🏗️</span>
+                <h2 class="section-title">Gambaran Keseluruhan Sistem</h2>
+            </div>
+            <p class="section-description">
+                Pembantu Pintar JKST dibina menggunakan senibina moden yang menggabungkan beberapa komponen utama untuk memberikan pengalaman pengguna yang lancar dan respons yang berkualiti tinggi.
+            </p>
+
+            <div class="architecture-diagram">
+                <div class="diagram-container">
+                    <!-- User Layer -->
+                    <div class="diagram-row">
+                        <div class="diagram-box user">
+                            <div class="diagram-box-icon">👤</div>
+                            <div class="diagram-box-title">Pengguna</div>
+                            <div class="diagram-box-subtitle">Warga JKST</div>
+                        </div>
+                    </div>
+
+                    <div class="diagram-row">
+                        <span class="diagram-arrow vertical">↓</span>
+                    </div>
+
+                    <!-- Frontend Layer -->
+                    <div class="diagram-row">
+                        <div class="diagram-group">
+                            <span class="diagram-group-label">Lapisan Antara Muka</span>
+                            <div class="diagram-box frontend">
+                                <div class="diagram-box-icon">🌐</div>
+                                <div class="diagram-box-title">Web Interface</div>
+                                <div class="diagram-box-subtitle">HTML/CSS/JS</div>
+                            </div>
+                            <div class="diagram-box frontend">
+                                <div class="diagram-box-icon">📱</div>
+                                <div class="diagram-box-title">Responsive UI</div>
+                                <div class="diagram-box-subtitle">Mobile Ready</div>
+                            </div>
+                            <div class="diagram-box frontend">
+                                <div class="diagram-box-icon">🤖</div>
+                                <div class="diagram-box-title">Telegram Bot</div>
+                                <div class="diagram-box-subtitle">@jkst_ai_bot</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="diagram-row">
+                        <span class="diagram-arrow vertical">↓</span>
+                    </div>
+
+                    <!-- Backend Layer -->
+                    <div class="diagram-row">
+                        <div class="diagram-group">
+                            <span class="diagram-group-label">Lapisan Backend</span>
+                            <div class="diagram-box backend">
+                                <div class="diagram-box-icon">⚡</div>
+                                <div class="diagram-box-title">FastAPI</div>
+                                <div class="diagram-box-subtitle">REST API</div>
+                            </div>
+                            <div class="diagram-box backend">
+                                <div class="diagram-box-icon">🔍</div>
+                                <div class="diagram-box-title">RAG Pipeline</div>
+                                <div class="diagram-box-subtitle">Google Cloud RAG</div>
+                            </div>
+                            <div class="diagram-box backend">
+                                <div class="diagram-box-icon">🏷️</div>
+                                <div class="diagram-box-title">Query Classifier</div>
+                                <div class="diagram-box-subtitle">Internal/External/News</div>
+                            </div>
+                            <div class="diagram-box backend">
+                                <div class="diagram-box-icon">📨</div>
+                                <div class="diagram-box-title">Telegram Webhook</div>
+                                <div class="diagram-box-subtitle">Message Handler</div>
+                            </div>
+                            <div class="diagram-box backend">
+                                <div class="diagram-box-icon">🎙️</div>
+                                <div class="diagram-box-title">Voice API</div>
+                                <div class="diagram-box-subtitle">STT + TTS</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="diagram-row">
+                        <span class="diagram-arrow vertical">↓</span>
+                    </div>
+
+                    <!-- AI & Database Layer -->
+                    <div class="diagram-row">
+                        <div class="diagram-group">
+                            <span class="diagram-group-label">Lapisan AI & Data</span>
+                            <div class="diagram-box ai">
+                                <div class="diagram-box-icon">🤖</div>
+                                <div class="diagram-box-title">Gemini 2.0 Flash</div>
+                                <div class="diagram-box-subtitle">Google LLM</div>
+                            </div>
+                            <div class="diagram-box ai">
+                                <div class="diagram-box-icon">🔀</div>
+                                <div class="diagram-box-title">Cohere Rerank</div>
+                                <div class="diagram-box-subtitle">rerank-v3.5</div>
+                            </div>
+                            <div class="diagram-box ai">
+                                <div class="diagram-box-icon">🎤</div>
+                                <div class="diagram-box-title">OpenAI Whisper</div>
+                                <div class="diagram-box-subtitle">Speech-to-Text</div>
+                            </div>
+                            <div class="diagram-box database">
+                                <div class="diagram-box-icon">📊</div>
+                                <div class="diagram-box-title">Google Cloud RAG</div>
+                                <div class="diagram-box-subtitle">Vertex AI Corpus</div>
+                            </div>
+                            <div class="diagram-box database">
+                                <div class="diagram-box-icon">📁</div>
+                                <div class="diagram-box-title">Local Knowledge</div>
+                                <div class="diagram-box-subtitle">20 Fail Markdown</div>
+                            </div>
+                            <div class="diagram-box database">
+                                <div class="diagram-box-icon">☁️</div>
+                                <div class="diagram-box-title">Google Cloud Storage</div>
+                                <div class="diagram-box-subtitle">Dokumen JKST</div>
+                            </div>
+                            <div class="diagram-box database">
+                                <div class="diagram-box-icon">🌐</div>
+                                <div class="diagram-box-title">Tavily Web Search</div>
+                                <div class="diagram-box-subtitle">Carian Tambahan</div>
+                            </div>
+                            <div class="diagram-box database">
+                                <div class="diagram-box-icon">📰</div>
+                                <div class="diagram-box-title">JKST News Scraper</div>
+                                <div class="diagram-box-subtitle">Berita Rasmi</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Flow -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🔄</span>
+                <h2 class="section-title">Aliran Data (Data Flow)</h2>
+            </div>
+            <p class="section-description">
+                Setiap pertanyaan pengguna melalui beberapa langkah pemprosesan untuk memastikan jawapan yang diberikan adalah relevan dan tepat.
+            </p>
+
+            <div class="flow-container">
+                <div class="flow-step">
+                    <div class="flow-number">1</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">💬</div>
+                        <h4 class="flow-title">Input Soalan</h4>
+                        <p class="flow-description">Pengguna memasukkan soalan dalam bahasa semulajadi melalui antara muka chat</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">2</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🏷️</div>
+                        <h4 class="flow-title">Klasifikasi Soalan</h4>
+                        <p class="flow-description">Soalan diklasifikasikan sebagai dalaman (JKST), luaran, berita JKST, atau hibrid untuk menentukan sumber data</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">3</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🔍</div>
+                        <h4 class="flow-title">Retrieval Pelbagai Sumber</h4>
+                        <p class="flow-description">Dokumen relevan diambil dari Google Cloud RAG, fail pengetahuan tempatan, berita JKST, dan/atau carian web Tavily</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">4</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🔀</div>
+                        <h4 class="flow-title">Reranking</h4>
+                        <p class="flow-description">Hasil carian disusun semula menggunakan Cohere rerank-v3.5 untuk memilih 5 dokumen paling relevan daripada 15 hasil awal</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">5</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🤖</div>
+                        <h4 class="flow-title">AI Generation</h4>
+                        <p class="flow-description">Gemini 2.0 Flash menjana jawapan berdasarkan konteks dokumen yang diambil dan disusun semula</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">6</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">✅</div>
+                        <h4 class="flow-title">Response</h4>
+                        <p class="flow-description">Jawapan dipaparkan bersama rujukan dokumen untuk pengesahan. Respons juga di-cache untuk 5 minit</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Telegram Bot Integration -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🤖</span>
+                <h2 class="section-title">Integrasi Bot Telegram</h2>
+            </div>
+            <p class="section-description">
+                Pembantu Pintar JKST kini tersedia di Telegram melalui bot @jkst_ai_bot. Bot ini menggunakan enjin AI yang sama seperti versi web untuk memberikan respons yang konsisten dan berkualiti tinggi.
+            </p>
+
+            <div class="flow-container">
+                <div class="flow-step">
+                    <div class="flow-number">1</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">💬</div>
+                        <h4 class="flow-title">Mesej dari Telegram</h4>
+                        <p class="flow-description">Pengguna menghantar soalan melalui chat Telegram</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">2</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">📡</div>
+                        <h4 class="flow-title">Webhook Handler</h4>
+                        <p class="flow-description">Telegram API menghantar update ke /api/telegram/webhook</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">3</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">⚙️</div>
+                        <h4 class="flow-title">Pemprosesan Mesej</h4>
+                        <p class="flow-description">Backend memproses perintah atau menghantar soalan ke RAG</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">4</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🧠</div>
+                        <h4 class="flow-title">AI Response</h4>
+                        <p class="flow-description">Menggunakan RAG dan Gemini untuk menjana jawapan</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">5</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">✉️</div>
+                        <h4 class="flow-title">Balas ke Telegram</h4>
+                        <p class="flow-description">Jawapan dihantar balik kepada pengguna melalui Telegram API</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 12px;">
+                <h3 style="margin-bottom: 1rem; color: var(--accent-cyan);">⚙️ Maklumat Teknikal Bot Telegram</h3>
+                <ul style="list-style: none; padding: 0; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.8;">
+                    <li><strong>Nama Bot:</strong> @jkst_ai_bot</li>
+                    <li><strong>Endpoint Webhook:</strong> POST /api/telegram/webhook</li>
+                    <li><strong>Perintah Tersedia:</strong> /start, /help, /clear</li>
+                    <li><strong>Penyimpanan Perbualan:</strong> Per-chat in-memory storage (maks 10 pasang mesej)</li>
+                    <li><strong>Had Saiz Mesej:</strong> 4096 aksara (auto-split)</li>
+                    <li><strong>Sokongan Format:</strong> HTML untuk penyimpanan format</li>
+                    <li><strong>Tipologi Keselamatan:</strong> Webhook secret token untuk pengesahan</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Voice Features -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🎙️</span>
+                <h2 class="section-title">Ciri Suara (Voice Features)</h2>
+            </div>
+            <p class="section-description">
+                Pembantu Pintar JKST menyokong interaksi suara melalui Speech-to-Text (STT) dan Text-to-Speech (TTS), membolehkan pengguna bertanya secara lisan dan mendengar jawapan.
+            </p>
+
+            <div class="flow-container">
+                <div class="flow-step">
+                    <div class="flow-number">1</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🎤</div>
+                        <h4 class="flow-title">Rakaman Suara</h4>
+                        <p class="flow-description">Pengguna merakam soalan melalui mikrofon pada antara muka web</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">2</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">📝</div>
+                        <h4 class="flow-title">Transkripsi (STT)</h4>
+                        <p class="flow-description">Audio dihantar ke OpenAI Whisper API untuk ditukar kepada teks dalam Bahasa Malaysia</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">3</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🤖</div>
+                        <h4 class="flow-title">Pemprosesan AI</h4>
+                        <p class="flow-description">Teks yang ditranskripsi diproses melalui pipeline RAG seperti biasa</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">4</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🔊</div>
+                        <h4 class="flow-title">Sintesis Suara (TTS)</h4>
+                        <p class="flow-description">Jawapan ditukar kepada audio menggunakan Google Cloud TTS (suara ms-MY Wavenet)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px;">
+                <h3 style="margin-bottom: 1rem; color: var(--accent-purple);">⚙️ Maklumat Teknikal Suara</h3>
+                <ul style="list-style: none; padding: 0; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.8;">
+                    <li><strong>STT Engine:</strong> OpenAI Whisper (model whisper-1)</li>
+                    <li><strong>TTS Engine:</strong> Google Cloud Text-to-Speech</li>
+                    <li><strong>Bahasa:</strong> Bahasa Malaysia (ms-MY)</li>
+                    <li><strong>Suara TTS:</strong> ms-MY-Wavenet-A (perempuan)</li>
+                    <li><strong>Format Audio:</strong> WebM (input), MP3 (output)</li>
+                    <li><strong>Had Teks TTS:</strong> Maksimum 5,000 aksara</li>
+                    <li><strong>Endpoint STT:</strong> POST /api/voice/transcribe</li>
+                    <li><strong>Endpoint TTS:</strong> POST /api/voice/synthesize</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- News Scraping -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">📰</span>
+                <h2 class="section-title">Pengambilan Berita JKST</h2>
+            </div>
+            <p class="section-description">
+                Sistem ini boleh mengambil berita dan aktiviti terkini secara langsung dari laman web rasmi JKST (syariah.terengganu.gov.my) apabila pengguna bertanya tentang berita atau aktiviti terkini.
+            </p>
+
+            <div class="flow-container">
+                <div class="flow-step">
+                    <div class="flow-number">1</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">❓</div>
+                        <h4 class="flow-title">Pengesanan Soalan Berita</h4>
+                        <p class="flow-description">Sistem mengesan kata kunci seperti "berita terkini", "aktiviti JKST", "program terbaru" melalui Query Classifier</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">2</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">🌐</div>
+                        <h4 class="flow-title">Pengambilan dari Laman Web</h4>
+                        <p class="flow-description">Berita diambil secara langsung dari laman web rasmi JKST dan di-cache selama 30 minit</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">3</div>
+                    <div class="flow-content">
+                        <div class="flow-icon">📋</div>
+                        <h4 class="flow-title">Pembentangan</h4>
+                        <p class="flow-description">Berita diformat dan disertakan sebagai konteks untuk Gemini menjana jawapan yang terkini</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technology Stack -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🛠️</span>
+                <h2 class="section-title">Teknologi Yang Digunakan</h2>
+            </div>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <div class="tech-card-header">
+                        <div class="tech-card-icon frontend">🎨</div>
+                        <div>
+                            <h3 class="tech-card-title">Frontend</h3>
+                            <span class="tech-card-category">User Interface</span>
+                        </div>
+                    </div>
+                    <div class="tech-list">
+                        <span class="tech-tag">HTML5</span>
+                        <span class="tech-tag">CSS3</span>
+                        <span class="tech-tag">JavaScript</span>
+                        <span class="tech-tag">Responsive Design</span>
+                        <span class="tech-tag">Glassmorphism UI</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-header">
+                        <div class="tech-card-icon backend">⚙️</div>
+                        <div>
+                            <h3 class="tech-card-title">Backend</h3>
+                            <span class="tech-card-category">API & Logic</span>
+                        </div>
+                    </div>
+                    <div class="tech-list">
+                        <span class="tech-tag">Python 3.11+</span>
+                        <span class="tech-tag">FastAPI</span>
+                        <span class="tech-tag">Pydantic</span>
+                        <span class="tech-tag">Uvicorn (4 workers)</span>
+                        <span class="tech-tag">HTTPX (async)</span>
+                        <span class="tech-tag">Telegram Bot API</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-header">
+                        <div class="tech-card-icon ai">🧠</div>
+                        <div>
+                            <h3 class="tech-card-title">AI & ML</h3>
+                            <span class="tech-card-category">Intelligence</span>
+                        </div>
+                    </div>
+                    <div class="tech-list">
+                        <span class="tech-tag">Gemini 2.0 Flash (Google)</span>
+                        <span class="tech-tag">Google Cloud RAG (Vertex AI)</span>
+                        <span class="tech-tag">Cohere Reranking (v3.5)</span>
+                        <span class="tech-tag">OpenAI Whisper (STT)</span>
+                        <span class="tech-tag">Google Cloud TTS</span>
+                        <span class="tech-tag">Tavily Web Search</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-header">
+                        <div class="tech-card-icon database">💾</div>
+                        <div>
+                            <h3 class="tech-card-title">Database</h3>
+                            <span class="tech-card-category">Data Storage</span>
+                        </div>
+                    </div>
+                    <div class="tech-list">
+                        <span class="tech-tag">Google Cloud RAG Corpus</span>
+                        <span class="tech-tag">Google Cloud Storage (GCS)</span>
+                        <span class="tech-tag">Local Markdown Knowledge (20 fail)</span>
+                        <span class="tech-tag">In-Memory Cache (TTL)</span>
+                        <span class="tech-tag">CSV Logging</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-header">
+                        <div class="tech-card-icon infra">☁️</div>
+                        <div>
+                            <h3 class="tech-card-title">Infrastructure</h3>
+                            <span class="tech-card-category">Deployment</span>
+                        </div>
+                    </div>
+                    <div class="tech-list">
+                        <span class="tech-tag">Ubuntu 24.04 LTS</span>
+                        <span class="tech-tag">Nginx (Reverse Proxy)</span>
+                        <span class="tech-tag">Systemd Service</span>
+                        <span class="tech-tag">SSL/TLS (External Proxy)</span>
+                        <span class="tech-tag">UFW Firewall</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-header">
+                        <div class="tech-card-icon security">🔒</div>
+                        <div>
+                            <h3 class="tech-card-title">Security</h3>
+                            <span class="tech-card-category">Protection</span>
+                        </div>
+                    </div>
+                    <div class="tech-list">
+                        <span class="tech-tag">HTTPS (via External Proxy)</span>
+                        <span class="tech-tag">API Rate Limiting (10r/s)</span>
+                        <span class="tech-tag">Input Validation</span>
+                        <span class="tech-tag">CORS Policy</span>
+                        <span class="tech-tag">Fail2Ban</span>
+                        <span class="tech-tag">SSH Key-Only Auth</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">✨</span>
+                <h2 class="section-title">Ciri-ciri Utama</h2>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-content">
+                        <h4>Ketepatan Tinggi</h4>
+                        <p>Jawapan berdasarkan dokumen rasmi JKST dengan rujukan yang jelas</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-content">
+                        <h4>Respons Pantas</h4>
+                        <p>Masa respons kurang dari 3 saat untuk kebanyakan pertanyaan</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🔄</div>
+                    <div class="feature-content">
+                        <h4>Konteks Perbualan</h4>
+                        <p>Memahami konteks dari soalan-soalan sebelumnya dalam sesi</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-content">
+                        <h4>Responsive Design</h4>
+                        <p>Berfungsi dengan baik pada desktop, tablet dan telefon pintar</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">📚</div>
+                    <div class="feature-content">
+                        <h4>Rujukan Dokumen</h4>
+                        <p>Setiap jawapan disertakan dengan sumber rujukan untuk pengesahan</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-content">
+                        <h4>Bahasa Malaysia</h4>
+                        <p>Dioptimumkan untuk memahami dan menjawab dalam Bahasa Malaysia</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">⭐</div>
+                    <div class="feature-content">
+                        <h4>Rating & Feedback</h4>
+                        <p>Pengguna boleh menilai jawapan dengan thumbs up/down dan memberikan ulasan</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">📥</div>
+                    <div class="feature-content">
+                        <h4>Muat Turun Dokumen</h4>
+                        <p>Akses terus ke dokumen JKST yang relevan dengan satu klik</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🤖</div>
+                    <div class="feature-content">
+                        <h4>Bot Telegram</h4>
+                        <p>Akses Pembantu Pintar melalui Telegram @jkst_ai_bot</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🎙️</div>
+                    <div class="feature-content">
+                        <h4>Input & Output Suara</h4>
+                        <p>Soal jawab secara lisan menggunakan OpenAI Whisper (STT) dan Google Cloud TTS</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-content">
+                        <h4>Carian Web Tambahan</h4>
+                        <p>Integrasi Tavily untuk mencari maklumat tambahan dari internet apabila diperlukan</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">📰</div>
+                    <div class="feature-content">
+                        <h4>Berita Terkini JKST</h4>
+                        <p>Pengambilan berita dan aktiviti secara langsung dari laman web rasmi JKST</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🔀</div>
+                    <div class="feature-content">
+                        <h4>Reranking Pintar</h4>
+                        <p>Cohere rerank-v3.5 menyusun semula hasil carian untuk ketepatan lebih tinggi</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">💾</div>
+                    <div class="feature-content">
+                        <h4>Caching & Logging</h4>
+                        <p>Cache respons selama 5 minit dan log perbualan ke CSV untuk analisis</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-icon">🔐</span>
+                <h2 class="section-title">Keselamatan & Privasi</h2>
+            </div>
+            <p class="section-description">
+                Sistem ini dibina dengan mengutamakan keselamatan data dan privasi pengguna.
+            </p>
+
+            <div class="security-grid">
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">Enkripsi HTTPS/TLS</span>
+                </div>
+
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">Tiada Penyimpanan Data Peribadi</span>
+                </div>
+
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">Akses Dalaman Sahaja</span>
+                </div>
+
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">Input Validation</span>
+                </div>
+
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">Rate Limiting</span>
+                </div>
+
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">Audit Logging (CSV)</span>
+                </div>
+
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">Fail2Ban (SSH, Nginx)</span>
+                </div>
+
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">UFW Firewall</span>
+                </div>
+
+                <div class="security-item">
+                    <div class="security-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="security-text">Telegram Webhook Secret</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="page-footer">
+            <p>Pembantu Pintar JKST &copy; 2026 | <a href="https://syariah.terengganu.gov.my" target="_blank">JKST</a></p>
+            <p style="margin-top: 0.5rem;">Inovasi bersama oleh Pendakwah Teknologi & JKST</p>
+            <p style="margin-top: 1rem;">
+                <a href="/">Laman Utama</a> &bull;
+                <a href="/changelog.html">Changelog</a>
+            </p>
+        </footer>
+    </main>
+</body>
+
+</html>
