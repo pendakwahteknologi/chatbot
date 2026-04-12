@@ -1806,7 +1806,8 @@
 
                     <div class="chat-input-area">
                         <div class="chat-input-row">
-                            <textarea id="question" placeholder="Taip soalan di sini..." rows="1"></textarea>
+                            <button id="micBtn" title="Tekan dan tahan untuk bercakap" style="background:rgba(147,51,234,0.15);border:1px solid rgba(147,51,234,0.3);border-radius:12px;padding:10px 14px;cursor:pointer;color:#c084fc;font-size:1.2rem;transition:all 0.2s;flex-shrink:0;">&#127908;</button>
+                            <textarea id="question" placeholder="Taip soalan atau tekan mikrofon..." rows="1"></textarea>
                             <button id="askBtn">
                                 <span>Hantar</span>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1816,7 +1817,8 @@
                                 </svg>
                             </button>
                         </div>
-                        <div class="chat-hint">Tekan Enter untuk hantar • Shift+Enter untuk baris baharu</div>
+                        <div class="chat-hint">Tekan Enter untuk hantar • Shift+Enter untuk baris baharu • &#127908; Tekan mikrofon untuk suara</div>
+                        <div id="micStatus" style="display:none;text-align:center;padding:6px;font-size:0.8rem;color:#c084fc;"></div>
                     </div>
                 </div>
             </div>
@@ -2405,6 +2407,15 @@ Apa yang boleh saya bantu hari ini?`;
             time.className = 'chat-time';
             time.textContent = timestamp || formatTimestamp();
 
+            // Add speaker button for bot messages (local TTS)
+            if (role === 'bot' && text && text.length > 10) {
+                var speakerBtn = document.createElement('button');
+                speakerBtn.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:6px 14px;background:rgba(147,51,234,0.1);border:1px solid rgba(147,51,234,0.25);border-radius:8px;color:#c084fc;cursor:pointer;font-size:0.78rem;transition:all 0.2s;';
+                speakerBtn.textContent = '\uD83D\uDD0A Dengar';
+                speakerBtn.addEventListener('click', function() { playTTS(this, text); });
+                bubble.appendChild(speakerBtn);
+            }
+
             wrapper.appendChild(bubble);
             wrapper.appendChild(time);
             chatHistory.appendChild(wrapper);
@@ -2771,6 +2782,152 @@ Apa yang boleh saya bantu hari ini?`;
             }
             questionInput.focus();
         });
+
+        // ================================================================
+        // VOICE FEATURES — 100% Local (Whisper STT + MMS TTS)
+        // ================================================================
+        var micBtn = document.getElementById('micBtn');
+        var micStatus = document.getElementById('micStatus');
+        var mediaRecorder = null;
+        var audioChunks = [];
+        var isRecording = false;
+
+        // Microphone — click to start/stop recording
+        if (micBtn) {
+            micBtn.addEventListener('click', function() {
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            });
+        }
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                mediaRecorder.addEventListener('dataavailable', function(e) {
+                    audioChunks.push(e.data);
+                });
+                mediaRecorder.addEventListener('stop', function() {
+                    stream.getTracks().forEach(function(t) { t.stop(); });
+                    processAudio();
+                });
+                mediaRecorder.start();
+                isRecording = true;
+                micBtn.style.background = 'rgba(239,68,68,0.3)';
+                micBtn.style.borderColor = 'rgba(239,68,68,0.6)';
+                micBtn.textContent = '\u23F9';
+                micStatus.style.display = 'block';
+                micStatus.textContent = '\uD83D\uDD34 Merakam... klik sekali lagi untuk berhenti';
+            }).catch(function(err) {
+                console.error('Mic error:', err);
+                micStatus.style.display = 'block';
+                micStatus.textContent = 'Ralat: Tiada akses mikrofon';
+                setTimeout(function() { micStatus.style.display = 'none'; }, 3000);
+            });
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            micBtn.style.background = 'rgba(147,51,234,0.15)';
+            micBtn.style.borderColor = 'rgba(147,51,234,0.3)';
+            micBtn.textContent = '\uD83C\uDF99';
+            micStatus.textContent = '\u23F3 Sedang transkripsi...';
+        }
+
+        function processAudio() {
+            var blob = new Blob(audioChunks, { type: 'audio/webm' });
+            var reader = new FileReader();
+            reader.onloadend = function() {
+                var base64 = reader.result.split(',')[1];
+                // Send to local Whisper endpoint
+                fetch('/api/voice/transcribe/local', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ audio_data: base64 })
+                }).then(function(r) { return r.json(); }).then(function(data) {
+                    if (data.text) {
+                        questionInput.value = data.text;
+                        micStatus.textContent = '\u2705 Transkripsi: ' + data.text.substring(0, 60) + (data.text.length > 60 ? '...' : '');
+                        // Auto-resize textarea
+                        questionInput.style.height = 'auto';
+                        questionInput.style.height = questionInput.scrollHeight + 'px';
+                        setTimeout(function() { micStatus.style.display = 'none'; }, 3000);
+                    } else {
+                        micStatus.textContent = 'Tiada pertuturan dikesan';
+                        setTimeout(function() { micStatus.style.display = 'none'; }, 2000);
+                    }
+                }).catch(function(err) {
+                    console.error('STT error:', err);
+                    micStatus.textContent = 'Ralat transkripsi: ' + err.message;
+                    setTimeout(function() { micStatus.style.display = 'none'; }, 3000);
+                });
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        // TTS — Play bot response as speech (local)
+        var currentAudio = null;
+
+        function playTTS(btn, text) {
+            // Strip markdown for cleaner speech
+            var cleanText = text
+                .replace(/#{1,6}\s?/g, '')
+                .replace(/\*\*(.+?)\*\*/g, '$1')
+                .replace(/\*(.+?)\*/g, '$1')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/`[^`]+`/g, '')
+                .replace(/[-*_]{3,}/g, '')
+                .replace(/\n{2,}/g, '. ')
+                .replace(/\n/g, ' ')
+                .substring(0, 3000);
+
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            var origText = btn.textContent;
+            btn.textContent = '\u23F3 Menjana...';
+            btn.disabled = true;
+
+            fetch('/api/voice/synthesize/local', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: cleanText })
+            }).then(function(r) {
+                if (!r.ok) throw new Error('TTS gagal');
+                return r.blob();
+            }).then(function(blob) {
+                var url = URL.createObjectURL(blob);
+                currentAudio = new Audio(url);
+                currentAudio.play();
+                btn.textContent = '\u23F9 Berhenti';
+                btn.disabled = false;
+                currentAudio.addEventListener('ended', function() {
+                    btn.textContent = '\uD83D\uDD0A Dengar';
+                    currentAudio = null;
+                });
+                btn.onclick = function() {
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                        btn.textContent = '\uD83D\uDD0A Dengar';
+                        btn.onclick = null;
+                        btn.addEventListener('click', function() { playTTS(btn, text); });
+                    }
+                };
+            }).catch(function(err) {
+                console.error('TTS error:', err);
+                btn.textContent = '\uD83D\uDD0A Dengar';
+                btn.disabled = false;
+            });
+        }
     </script>
 </body>
 

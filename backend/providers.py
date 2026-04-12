@@ -2,6 +2,13 @@
 RAG Provider Abstraction Layer
 Supports 3 modes: google, local, ultra
 Controlled by RAG_MODE environment variable
+
+GX10 Performance Tuning:
+- GPU-accelerated embeddings via CUDA (sentence-transformers on GB10)
+- Larger batch sizes for embedding (256 vs 32 default)
+- ChromaDB HNSW tuned for large collections
+- Cross-encoder reranking on GPU
+- Configurable device selection via env vars
 """
 
 import os
@@ -14,6 +21,15 @@ import sqlite3
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple, Generator
 from datetime import datetime
+
+# GX10: Detect device once at import time
+import torch
+DEVICE = os.environ.get("EMBEDDING_DEVICE", "cuda" if torch.cuda.is_available() else "cpu")
+CROSS_ENCODER_DEVICE = os.environ.get("CROSS_ENCODER_DEVICE", DEVICE)
+EMBEDDING_BATCH_SIZE = int(os.environ.get("EMBEDDING_BATCH_SIZE", "256"))
+INGEST_BATCH_SIZE = int(os.environ.get("INGEST_BATCH_SIZE", "500"))
+print(f"[GX10] Compute device: {DEVICE} | Cross-encoder: {CROSS_ENCODER_DEVICE} | "
+      f"Embedding batch: {EMBEDDING_BATCH_SIZE} | Ingest batch: {INGEST_BATCH_SIZE}")
 
 # ============================================================================
 # MODE CONFIGURATION
@@ -71,7 +87,7 @@ _local_docs_ingested = False
 
 
 def get_embedding_model():
-    """Lazy-load sentence-transformers model."""
+    """Lazy-load sentence-transformers model onto GPU if available."""
     global _embedding_model
     if _embedding_model is None:
         from sentence_transformers import SentenceTransformer
@@ -79,27 +95,36 @@ def get_embedding_model():
             "LOCAL_EMBEDDING_MODEL",
             "mesolitica/mistral-embedding-191m-8k-contrastive"
         )
-        print(f"[LOCAL] Loading embedding model: {model_name}")
-        _embedding_model = SentenceTransformer(model_name)
-        print(f"[LOCAL] Embedding model loaded successfully")
+        print(f"[LOCAL] Loading embedding model: {model_name} → {DEVICE}")
+        _embedding_model = SentenceTransformer(model_name, device=DEVICE)
+        # Warm up the model (first inference is slow due to CUDA kernel compilation)
+        _ = _embedding_model.encode(["warmup"], device=DEVICE, batch_size=1)
+        print(f"[LOCAL] Embedding model loaded on {DEVICE}")
     return _embedding_model
 
 
 def get_chroma_collection():
-    """Get or create ChromaDB collection."""
+    """Get or create ChromaDB collection with GX10-tuned HNSW params."""
     global _chroma_collection
     if _chroma_collection is None:
         import chromadb
 
         persist_dir = os.environ.get(
             "CHROMA_PERSIST_DIR",
-            "/opt/jkst-master-ai/chroma_db"
+            "/opt/jkst-ai/chroma_db"
         )
         print(f"[LOCAL] Initializing ChromaDB at: {persist_dir}")
         client = chromadb.PersistentClient(path=persist_dir)
         _chroma_collection = client.get_or_create_collection(
             name="jkst_knowledge",
-            metadata={"hnsw:space": "cosine"}
+            metadata={
+                "hnsw:space": "cosine",
+                # GX10 tuning: more RAM = larger search graph = better recall
+                "hnsw:M": 32,              # connections per node (default 16)
+                "hnsw:construction_ef": 200, # build quality (default 100)
+                "hnsw:search_ef": 100,       # search quality (default 10)
+                "hnsw:num_threads": 8,       # parallel search threads
+            }
         )
         print(f"[LOCAL] ChromaDB collection ready: {_chroma_collection.count()} documents")
     return _chroma_collection
@@ -160,7 +185,7 @@ def extract_text_from_file(filepath: str) -> str:
         return ""
 
 
-def ingest_knowledge_to_chroma(knowledge_path: str = "/opt/jkst-master-ai/knowledge"):
+def ingest_knowledge_to_chroma(knowledge_path: str = "/opt/jkst-ai/knowledge"):
     """Ingest local knowledge files + documents into ChromaDB with chunking."""
     global _local_docs_ingested
     if _local_docs_ingested:
@@ -184,7 +209,7 @@ def ingest_knowledge_to_chroma(knowledge_path: str = "/opt/jkst-master-ai/knowle
         all_files += globlib.glob(os.path.join(knowledge_path, ext))
 
     # Also ingest from local documents folder if it exists
-    local_docs_path = os.environ.get("LOCAL_DOCUMENTS_PATH", "/opt/jkst-master-ai/documents")
+    local_docs_path = os.environ.get("LOCAL_DOCUMENTS_PATH", "/opt/jkst-ai/documents")
     if os.path.exists(local_docs_path):
         for ext in ('*.md', '*.txt', '*.pdf', '*.docx'):
             all_files += globlib.glob(os.path.join(local_docs_path, ext))
@@ -248,24 +273,23 @@ def ingest_knowledge_to_chroma(knowledge_path: str = "/opt/jkst-master-ai/knowle
         print(f"[LOCAL] Skipped {skipped} files (empty or unreadable)")
 
     if all_texts:
-        total = len(all_texts)
-        embed_batch_size = 256  # Embed in batches to avoid OOM and show progress
-        store_batch_size = 100  # ChromaDB storage batch
+        print(f"[LOCAL] Embedding {len(all_texts)} chunks on {DEVICE} "
+              f"(batch_size={EMBEDDING_BATCH_SIZE})...")
+        t0 = time.time()
+        all_embeddings = model.encode(
+            all_texts,
+            batch_size=EMBEDDING_BATCH_SIZE,
+            show_progress_bar=True,
+            device=DEVICE,
+            normalize_embeddings=True,  # pre-normalize for cosine similarity
+        ).tolist()
+        embed_time = time.time() - t0
+        print(f"[LOCAL] Embedded {len(all_texts)} chunks in {embed_time:.1f}s "
+              f"({len(all_texts)/embed_time:.0f} chunks/s)")
 
-        print(f"[LOCAL] Embedding {total} chunks in batches of {embed_batch_size}...")
-
-        all_embeddings = []
-        for batch_start in range(0, total, embed_batch_size):
-            batch_end = min(batch_start + embed_batch_size, total)
-            batch_texts = all_texts[batch_start:batch_end]
-            batch_embs = model.encode(batch_texts, show_progress_bar=False).tolist()
-            all_embeddings.extend(batch_embs)
-            progress = len(all_embeddings)
-            print(f"[LOCAL] Embedded {progress}/{total} chunks ({progress*100//total}%)")
-
-        # Add to ChromaDB in batches
-        for i in range(0, len(all_ids), store_batch_size):
-            end = min(i + store_batch_size, len(all_ids))
+        # Add to ChromaDB in larger batches (GX10 has plenty of RAM)
+        for i in range(0, len(all_ids), INGEST_BATCH_SIZE):
+            end = min(i + INGEST_BATCH_SIZE, len(all_ids))
             collection.add(
                 ids=all_ids[i:end],
                 documents=all_texts[i:end],
@@ -291,8 +315,10 @@ class LocalRetriever(BaseRetriever):
         collection = get_chroma_collection()
         model = get_embedding_model()
 
-        # Embed query
-        query_embedding = await asyncio.to_thread(model.encode, query)
+        # Embed query on GPU
+        query_embedding = await asyncio.to_thread(
+            model.encode, query, device=DEVICE, normalize_embeddings=True
+        )
 
         # Search ChromaDB
         results = collection.query(
@@ -368,7 +394,7 @@ class GeminiGenerator(BaseGenerator):
 
             creds_path = os.environ.get(
                 "GOOGLE_APPLICATION_CREDENTIALS",
-                "/home/adilhidayat/jkst-credentials.json"
+                "/opt/jkst-ai/jkst-credentials.json"
             )
             project = os.environ.get("GCP_PROJECT_ID", "jab-kehakiman-syariah-tgg")
             location = os.environ.get("GCP_GEMINI_LOCATION", "us-central1")
@@ -576,7 +602,7 @@ class OpenAICompatibleGenerator(BaseGenerator):
 class ConversationMemory:
     """SQLite-based conversation memory for ultra mode."""
 
-    def __init__(self, db_path: str = "/opt/jkst-master-ai/logs/memory.db"):
+    def __init__(self, db_path: str = "/opt/jkst-ai/logs/memory.db"):
         self.db_path = db_path
         self._init_db()
 
@@ -672,10 +698,14 @@ Jawab HANYA dengan 3 baris, satu soalan setiap baris. Tiada nombor atau bullet p
         # Step 2: Vector search across all query variants
         all_vector_results = {}  # doc_id -> (text, metadata, best_score)
 
-        for q in expanded:
-            q_embedding = model.encode(q).tolist()
+        # GX10: Batch-encode all expanded queries at once on GPU (faster than one-by-one)
+        all_embeddings = model.encode(
+            expanded, batch_size=len(expanded), device=DEVICE, normalize_embeddings=True
+        )
+
+        for q, q_embedding in zip(expanded, all_embeddings):
             results = collection.query(
-                query_embeddings=[q_embedding],
+                query_embeddings=[q_embedding.tolist()],
                 n_results=self.top_k,
                 include=["documents", "metadatas", "distances"]
             )
@@ -784,8 +814,11 @@ class UltraReranker(BaseReranker):
                 "ULTRA_RERANKER_MODEL",
                 "cross-encoder/ms-marco-MiniLM-L-6-v2"
             )
-            print(f"[ULTRA] Loading cross-encoder: {model_name}")
-            self._cross_encoder = CrossEncoder(model_name)
+            print(f"[ULTRA] Loading cross-encoder: {model_name} → {CROSS_ENCODER_DEVICE}")
+            self._cross_encoder = CrossEncoder(model_name, device=CROSS_ENCODER_DEVICE)
+            # Warm up
+            _ = self._cross_encoder.predict([("warmup query", "warmup doc")])
+            print(f"[ULTRA] Cross-encoder ready on {CROSS_ENCODER_DEVICE}")
         return self._cross_encoder
 
     def rerank(self, query: str, documents: List[Dict[str, Any]], top_n: int = 5) -> List[Dict[str, Any]]:
@@ -801,7 +834,8 @@ class UltraReranker(BaseReranker):
                 for doc in documents
             ]
 
-            scores = model.predict(pairs)
+            # GX10: batch predict on GPU
+            scores = model.predict(pairs, batch_size=len(pairs))
 
             # Sort by cross-encoder score
             scored = list(zip(scores, documents))
@@ -911,36 +945,29 @@ Tulis 3 soalan susulan dalam Bahasa Melayu. Satu soalan setiap baris. Tiada nomb
                 role = "Pengguna" if msg["role"] == "user" else "Pembantu"
                 history_text += f"{role}: {msg['content']}\n"
 
-        # Ultra-enhanced system prompt
-        system_prompt = """Anda adalah Pembantu AI JKST (Jabatan Kehakiman Syariah Terengganu) — versi ULTRA.
+        # Ultra-enhanced system prompt — natural conversational style
+        system_prompt = """Kamu pegawai khidmat pelanggan JKST yang mesra. Jawab macam manusia biasa berbual — bukan robot.
 
-ANDA MESTI mengikut proses pemikiran berstruktur (Chain of Thought):
+CARA JAWAB:
+- JANGAN guna emoji atau emotikon langsung. Tidak perlu.
+- Tulis semula jadi, macam kawan yang berpengetahuan tolong jelaskan.
+- Jangan ulang soalan. Jangan guna ayat pembuka klise. Terus jawab.
+- Boleh fikir dulu sebelum jawab (fahami soalan, semak dokumen, baru jawab) tapi tulis jawapan akhir sahaja — jangan tunjuk proses berfikir.
 
-1. FAHAMI: Apakah sebenarnya yang ditanya? Kenal pasti niat sebenar pengguna.
-2. ANALISIS: Semak semua konteks/dokumen yang ada. Kenal pasti maklumat yang relevan.
-3. HUBUNGKAN: Gabungkan maklumat dari pelbagai sumber jika perlu.
-4. JAWAB: Berikan jawapan yang lengkap, tersusun, dan mudah difahami.
-5. SUMBER: Nyatakan sumber dengan jelas. Jika maklumat tidak pasti, nyatakan.
+RUJUKAN:
+- WAJIB sertakan rujukan yang boleh diklik jika jawapan dari dokumen tertentu.
+- Format: [Nama Dokumen](URL) — guna URL tepat dari konteks.
+- Kalau ada fail boleh muat turun, bagi terus pautan.
+- Jangan reka URL. Guna hanya URL dari konteks yang diberi.
+- Utamakan dokumen rasmi JKST, kemudian fail pengetahuan tempatan, terakhir web.
 
-PERATURAN KEUTAMAAN SUMBER:
-1. Dokumen Rasmi JKST → SUMBER UTAMA
-2. Fail Pengetahuan Tempatan → SUMBER KEDUA
-3. Maklumat Web → SUMBER TAMBAHAN sahaja
+BATASAN:
+- Jangan beri nasihat undang-undang atau fatwa. Suruh jumpa pegawai mahkamah.
+- Kalau tak pasti, cakap terus terang.
 
-FORMAT JAWAPAN:
-- Gunakan heading (##) untuk bahagian utama
-- Gunakan senarai bernombor untuk langkah/prosedur
-- Gunakan senarai bullet untuk maklumat umum
-- Sertakan pautan muat turun jika ada
-- Akhiri dengan "Soalan Berkaitan" jika sesuai
-
-AMARAN: JANGAN berikan nasihat undang-undang/agama. Arahkan kepada pegawai yang berkenaan.
-
-MAKLUMAT HUBUNGAN JKST:
-- Alamat: Tingkat 5, Bangunan Mahkamah Syariah, Jalan Sultan Mohamad, 21100 Kuala Terengganu
-- Waktu: Ahad-Rabu: 8:00 AM – 4:00 PM, Khamis: 8:00 AM – 3:00 PM
-- Telefon: 09-623 2323 | Emel: jkstr@esyariah.gov.my
-- Web: https://syariah.terengganu.gov.my"""
+HUBUNGAN JKST:
+Tingkat 5, Bangunan Mahkamah Syariah, Jalan Sultan Mohamad, 21100 Kuala Terengganu
+Ahad-Rabu 8am-4pm, Khamis 8am-3pm | Tel: 09-623 2323 | jkstr@esyariah.gov.my"""
 
         # Build context section
         context_section = ""
@@ -974,9 +1001,86 @@ Berikan jawapan yang LENGKAP dan TERSUSUN:"""
 
 
 # ============================================================================
+# OLLAMA LOCAL GENERATOR (for 100% local Ultra mode)
+# ============================================================================
+
+class OllamaLocalGenerator(BaseGenerator):
+    """
+    Uses Ollama running locally — zero cloud dependency.
+    No tool workaround needed (unlike YTL Ilmu).
+    Supports Gemma 4, Qwen3, Llama, etc.
+    """
+
+    def __init__(self):
+        self.base_url = os.environ.get("ULTRA_LLM_BASE_URL", "http://localhost:11434/v1")
+        self.model = os.environ.get("ULTRA_LLM_MODEL", "gemma4")
+        self.api_key = "ollama"  # Ollama ignores this but OpenAI client requires it
+        self._client = None
+
+    def _get_client(self):
+        if self._client is None:
+            from openai import OpenAI
+            self._client = OpenAI(
+                base_url=self.base_url,
+                api_key=self.api_key
+            )
+        return self._client
+
+    def generate(self, prompt: str) -> str:
+        client = self._get_client()
+        response = client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "Anda adalah pembantu AI yang berguna. Jawab dengan lengkap dalam Bahasa Melayu."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=2000,
+            temperature=0.2
+        )
+        return response.choices[0].message.content or ""
+
+    def generate_stream(self, prompt: str) -> Generator[str, None, None]:
+        client = self._get_client()
+        stream = client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "Anda adalah pembantu AI yang berguna. Jawab dengan lengkap dalam Bahasa Melayu."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=2000,
+            temperature=0.2,
+            stream=True
+        )
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+
+# ============================================================================
 # MODE FACTORY
 # ============================================================================
 _providers = {}
+
+
+def _create_generator() -> BaseGenerator:
+    """
+    Create the appropriate LLM generator based on environment config.
+
+    Priority:
+    1. If LOCAL_LLM_API_KEY is set → use OpenAICompatibleGenerator (YTL Ilmu, Ollama, etc.)
+    2. Otherwise → use GeminiGenerator (requires Google Cloud credentials)
+    """
+    llm_api_key = os.environ.get("LOCAL_LLM_API_KEY", "")
+    llm_base_url = os.environ.get("LOCAL_LLM_BASE_URL", "")
+
+    if llm_api_key or llm_base_url:
+        model = os.environ.get("LOCAL_LLM_MODEL", "ilmu-text-free-v2")
+        base = llm_base_url or "https://api.ytlailabs.tech/v1"
+        print(f"[LLM] Using OpenAI-compatible API: {base} model={model}")
+        return OpenAICompatibleGenerator()
+    else:
+        print(f"[LLM] Using Gemini (Google Cloud)")
+        return GeminiGenerator()
 
 
 def get_providers() -> Dict[str, Any]:
@@ -1014,6 +1118,7 @@ def get_providers() -> Dict[str, Any]:
                 return GeminiGenerator()
 
         if mode == "google":
+            # Google mode uses the existing app.py functions directly
             _providers[mode] = {
                 "mode": "google",
                 "retriever": None,  # Uses app.py's retrieve_from_rag()

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perbandingan 3 Mod — JKST AI</title>
+    <link rel="icon" type="image/png" href="/jkst-logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --bg-card: rgba(255,255,255,0.025);
+            --border: rgba(255,255,255,0.08);
+            --text: #fff;
+            --text-2: #a0a8b8;
+            --text-3: #64748b;
+            --blue: #4285F4;
+            --green: #16a34a;
+            --purple: #9333ea;
+            --gold: #f59e0b;
+            --font: 'Space Grotesk', sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Ambient */
+        .ambient { position: fixed; border-radius: 50%; filter: blur(120px); z-index: -1; pointer-events: none; }
+        .amb-1 { top: -10%; left: 10%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(66,133,244,0.08) 0%, transparent 70%); }
+        .amb-2 { bottom: -10%; right: 10%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(147,51,234,0.08) 0%, transparent 70%); }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 2rem 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .header h1 {
+            font-size: 1.6rem; font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f59e0b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .header p { color: var(--text-2); font-size: 0.88rem; margin-top: 0.3rem; }
+        .back-link {
+            position: absolute; top: 1.5rem; left: 1.5rem;
+            color: var(--text-2); text-decoration: none; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .back-link:hover { color: var(--text); }
+
+        /* Query input */
+        .query-bar {
+            max-width: 900px; margin: 1.5rem auto;
+            padding: 0 1.5rem;
+            display: flex; gap: 0.75rem;
+        }
+        .query-input {
+            flex: 1; padding: 14px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: var(--text); font-family: var(--font); font-size: 0.95rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .query-input::placeholder { color: var(--text-3); }
+        .query-input:focus { border-color: rgba(147,51,234,0.5); }
+        .send-btn {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, var(--purple), var(--gold));
+            border: none; border-radius: 14px;
+            color: white; font-family: var(--font);
+            font-weight: 600; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .send-btn:hover { opacity: 0.9; transform: scale(1.02); }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Columns */
+        .columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            max-width: 100%;
+            min-height: calc(100vh - 200px);
+        }
+
+        .col {
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+        }
+        .col:last-child { border-right: none; }
+
+        /* Column header */
+        .col-header {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 10;
+            backdrop-filter: blur(20px);
+            background: rgba(10,14,23,0.85);
+        }
+        .col-title { display: flex; align-items: center; gap: 8px; }
+        .col-title .icon { font-size: 1.3rem; }
+        .col-title h3 { font-size: 1rem; font-weight: 600; }
+        .col-cloud .col-title h3 { color: #60a5fa; }
+        .col-local .col-title h3 { color: #4ade80; }
+        .col-ultra .col-title h3 { color: #c084fc; }
+        .col-cloud .col-header { border-top: 2px solid var(--blue); }
+        .col-local .col-header { border-top: 2px solid var(--green); }
+        .col-ultra .col-header { border-top: 2px solid var(--purple); }
+
+        /* Status indicator */
+        .status {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.75rem; color: var(--text-3);
+        }
+        .status-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--text-3);
+        }
+        .status-dot.waiting { background: var(--text-3); }
+        .status-dot.loading { background: var(--gold); animation: blink 0.8s infinite; }
+        .status-dot.done { background: #4ade80; }
+        .status-dot.error { background: #ef4444; }
+        @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+        /* Response area */
+        .col-body {
+            flex: 1; padding: 1.2rem;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100%; color: var(--text-3);
+            text-align: center; padding: 2rem;
+        }
+        .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5; }
+        .empty-state p { font-size: 0.85rem; line-height: 1.5; }
+
+        /* Response content */
+        .response {
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: var(--text-2);
+        }
+        .response h1, .response h2, .response h3 { color: var(--text); margin: 1rem 0 0.5rem; }
+        .response h1 { font-size: 1.2rem; } .response h2 { font-size: 1.05rem; } .response h3 { font-size: 0.95rem; }
+        .response p { margin-bottom: 0.6rem; }
+        .response ul, .response ol { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+        .response li { margin-bottom: 0.3rem; }
+        .response strong { color: var(--text); }
+        .response a { color: #60a5fa; }
+        .response code {
+            background: rgba(255,255,255,0.06); padding: 2px 6px;
+            border-radius: 4px; font-family: var(--mono); font-size: 0.82rem;
+        }
+        .response blockquote {
+            border-left: 3px solid var(--border); padding-left: 1rem;
+            margin: 0.6rem 0; color: var(--text-3);
+        }
+        .response .error-text { color: #ef4444; }
+
+        /* Metrics bar */
+        .metrics {
+            padding: 0.8rem 1.2rem;
+            border-top: 1px solid var(--border);
+            display: flex; flex-wrap: wrap; gap: 0.8rem;
+            font-size: 0.72rem; color: var(--text-3);
+            background: rgba(10,14,23,0.6);
+        }
+        .metric { display: flex; align-items: center; gap: 4px; }
+        .metric-val { color: var(--text-2); font-weight: 500; font-family: var(--mono); }
+
+        /* Loading skeleton */
+        .skeleton {
+            display: flex; flex-direction: column; gap: 0.8rem; width: 100%;
+        }
+        .skel-line {
+            height: 14px; border-radius: 6px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        .skel-line:nth-child(1) { width: 60%; }
+        .skel-line:nth-child(2) { width: 90%; }
+        .skel-line:nth-child(3) { width: 75%; }
+        .skel-line:nth-child(4) { width: 85%; }
+        .skel-line:nth-child(5) { width: 40%; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+            .columns { grid-template-columns: 1fr; }
+            .col { border-right: none; border-bottom: 1px solid var(--border); min-height: 300px; }
+            .col:last-child { border-bottom: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient amb-1"></div>
+    <div class="ambient amb-2"></div>
+
+    <div class="header" style="position:relative;">
+        <a href="/" class="back-link">&larr; Kembali</a>
+        <h1>Perbandingan 3 Mod</h1>
+        <p>Hantar satu soalan, lihat jawapan dari Cloud, Local, dan Ultra serentak</p>
+    </div>
+
+    <div class="query-bar">
+        <input type="text" class="query-input" id="queryInput"
+               placeholder="Taip soalan anda di sini... contoh: Apakah prosedur perkahwinan?"
+               autocomplete="off">
+        <button class="send-btn" id="sendBtn">Hantar Semua</button>
+    </div>
+
+    <div class="columns">
+        <!-- Cloud -->
+        <div class="col col-cloud" id="colCloud">
+            <div class="col-header">
+                <div class="col-title"><span class="icon">&#9729;&#65039;</span><h3>Cloud RAG</h3></div>
+                <div class="status" id="statusCloud"><div class="status-dot waiting"></div><span>Sedia</span></div>
+            </div>
+            <div class="col-body" id="bodyCloud">
+                <div class="empty-state"><div class="empty-icon">&#9729;&#65039;</div><p>Gemini 2.0 Flash + Vertex AI RAG + Cohere<br>Masukkan soalan untuk mula</p></div>
+            </div>
+            <div class="metrics" id="metricsCloud" style="display:none;"></div>
+            <div class="cloud-notice" id="cloudNotice" style="display:none;padding:1rem 1.2rem;border-top:1px solid var(--border);font-size:0.78rem;color:var(--text-3);background:rgba(66,133,244,0.05);">
+                Cloud mode memerlukan Google Cloud credentials. Sediakan GCP_PROJECT_ID dan jkst-credentials.json untuk mengaktifkan mod ini.
+            </div>
+        </div>
+
+        <!-- Local -->
+        <div class="col col-local" id="colLocal">
+            <div class="col-header">
+                <div class="col-title"><span class="icon">&#127968;</span><h3>Local RAG</h3></div>
+                <div class="status" id="statusLocal"><div class="status-dot waiting"></div><span>Sedia</span></div>
+            </div>
+            <div class="col-body" id="bodyLocal">
+                <div class="empty-state"><div class="empty-icon">&#127968;</div><p>YTL Ilmu v2 + ChromaDB + Mesolitica 191M<br>Masukkan soalan untuk mula</p></div>
+            </div>
+            <div class="metrics" id="metricsLocal" style="display:none;"></div>
+        </div>
+
+        <!-- Ultra -->
+        <div class="col col-ultra" id="colUltra">
+            <div class="col-header">
+                <div class="col-title"><span class="icon">&#9889;</span><h3>Ultra RAG</h3></div>
+                <div class="status" id="statusUltra"><div class="status-dot waiting"></div><span>Sedia</span></div>
+            </div>
+            <div class="col-body" id="bodyUltra">
+                <div class="empty-state"><div class="empty-icon">&#9889;</div><p>Gemma 4 26B + Hybrid Search + Cross-Encoder + CoT<br>Masukkan soalan untuk mula</p></div>
+            </div>
+            <div class="metrics" id="metricsUltra" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('queryInput');
+        const btn = document.getElementById('sendBtn');
+
+        btn.addEventListener('click', sendAll);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !btn.disabled) sendAll();
+        });
+
+        function setStatus(mode, state, text) {
+            var el = document.getElementById('status' + mode);
+            var dot = el.querySelector('.status-dot');
+            dot.className = 'status-dot ' + state;
+            el.querySelector('span').textContent = text;
+        }
+
+        function showSkeleton(mode) {
+            var body = document.getElementById('body' + mode);
+            // Clear safely then build skeleton with DOM API
+            while (body.firstChild) body.removeChild(body.firstChild);
+            var skel = document.createElement('div');
+            skel.className = 'skeleton';
+            for (var i = 0; i < 5; i++) {
+                var line = document.createElement('div');
+                line.className = 'skel-line';
+                skel.appendChild(line);
+            }
+            body.appendChild(skel);
+        }
+
+        function sanitizeAndRenderMarkdown(text) {
+            // Escape HTML entities first to prevent XSS
+            var safe = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+
+            // Now apply markdown formatting on the escaped text
+            var html = safe
+                // Headers
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                // Bold
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                // Italic
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                // Inline code
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+                // Links — only allow http/https
+                .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                // Unordered list items
+                .replace(/^- (.+)$/gm, '<li>$1</li>')
+                // Ordered list items
+                .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+                // Double newline = paragraph break
+                .replace(/\n\n/g, '</p><p>')
+                // Single newline
+                .replace(/\n/g, '<br>');
+
+            // Wrap consecutive <li> in <ul>
+            html = html.replace(/((?:<li>[\s\S]*?<\/li>\s*(?:<br>)?)+)/g, function(m) {
+                return '<ul>' + m.replace(/<br>/g, '') + '</ul>';
+            });
+
+            return '<p>' + html + '</p>';
+        }
+
+        function showResponse(mode, replyText) {
+            var body = document.getElementById('body' + mode);
+            while (body.firstChild) body.removeChild(body.firstChild);
+            var div = document.createElement('div');
+            div.className = 'response';
+            // Use sanitized markdown renderer — input is from our own API server
+            div.innerHTML = sanitizeAndRenderMarkdown(replyText);
+            body.appendChild(div);
+        }
+
+        function showError(mode, message) {
+            var body = document.getElementById('body' + mode);
+            while (body.firstChild) body.removeChild(body.firstChild);
+            var div = document.createElement('div');
+            div.className = 'response';
+            var p = document.createElement('p');
+            p.className = 'error-text';
+            p.textContent = 'Ralat: ' + message;
+            div.appendChild(p);
+            body.appendChild(div);
+        }
+
+        function showMetrics(mode, data, timeMs) {
+            var el = document.getElementById('metrics' + mode);
+            var sources = data.retrieval ? data.retrieval.length : 0;
+            var qtype = data.query_type || '\u2014';
+            var cached = data.cache_hit ? 'Ya' : 'Tidak';
+
+            // Build metrics with DOM API
+            while (el.firstChild) el.removeChild(el.firstChild);
+
+            var items = [
+                ['Masa', (timeMs / 1000).toFixed(1) + 's'],
+                ['Sumber', String(sources)],
+                ['Jenis', qtype],
+                ['Cache', cached]
+            ];
+
+            if (data.self_evaluation && data.self_evaluation.purata) {
+                items.push(['Skor', data.self_evaluation.purata + '/5']);
+            }
+
+            items.forEach(function(item) {
+                var metric = document.createElement('div');
+                metric.className = 'metric';
+                metric.textContent = item[0] + ': ';
+                var val = document.createElement('span');
+                val.className = 'metric-val';
+                val.textContent = item[1];
+                metric.appendChild(val);
+                el.appendChild(metric);
+            });
+
+            el.style.display = 'flex';
+        }
+
+        async function queryMode(mode, modeParam, query) {
+            var capMode = mode.charAt(0).toUpperCase() + mode.slice(1);
+            setStatus(capMode, 'loading', 'Memproses...');
+            showSkeleton(capMode);
+
+            var t0 = performance.now();
+
+            try {
+                var resp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: query }],
+                        mode: modeParam
+                    })
+                });
+
+                var elapsed = performance.now() - t0;
+
+                if (!resp.ok) {
+                    throw new Error('HTTP ' + resp.status + ': ' + resp.statusText);
+                }
+
+                var data = await resp.json();
+
+                if (data.reply) {
+                    showResponse(capMode, data.reply);
+                } else {
+                    showError(capMode, 'Tiada jawapan diterima.');
+                }
+
+                showMetrics(capMode, data, elapsed);
+                setStatus(capMode, 'done', (elapsed / 1000).toFixed(1) + 's');
+
+            } catch (err) {
+                if (capMode === 'Cloud' && (err.message.indexOf('502') !== -1 || err.message.indexOf('500') !== -1)) {
+                    showError(capMode, 'Google Cloud credentials tidak dikonfigurasi. Mod ini memerlukan GCP Project ID dan jkst-credentials.json.');
+                    var notice = document.getElementById('cloudNotice');
+                    if (notice) notice.style.display = 'block';
+                } else {
+                    showError(capMode, err.message);
+                }
+                setStatus(capMode, 'error', 'Tidak aktif');
+                document.getElementById('metrics' + capMode).style.display = 'none';
+            }
+        }
+
+        async function sendAll() {
+            var query = input.value.trim();
+            if (!query) { input.focus(); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Memproses...';
+
+            // Reset metrics
+            ['Cloud', 'Local', 'Ultra'].forEach(function(m) {
+                document.getElementById('metrics' + m).style.display = 'none';
+            });
+
+            // Fire all 3 in parallel
+            await Promise.all([
+                queryMode('cloud', 'google', query),
+                queryMode('local', 'local', query),
+                queryMode('ultra', 'ultra', query)
+            ]);
+
+            btn.disabled = false;
+            btn.textContent = 'Hantar Semua';
+        }
+    </script>
+</body>
+</html>

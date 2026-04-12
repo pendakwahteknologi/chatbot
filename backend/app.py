@@ -19,32 +19,29 @@ import httpx
 # RAG Mode Configuration
 RAG_MODE = os.environ.get("RAG_MODE", "google")
 
-# Conditional imports based on mode
-if RAG_MODE == "google":
+# Import all SDKs — needed for per-request mode switching (compare page)
+import urllib.parse
+try:
     from google.cloud import storage
-    import urllib.parse
     from google import genai
     from google.oauth2 import service_account
     import google.auth.transport.requests
-    from tavily import TavilyClient
-    import cohere
-    from openai import OpenAI
-else:
-    # Local/Ultra modes — import lazily, avoid Google SDK requirement
+except ImportError:
     storage = None
-    import urllib.parse
-    try:
-        from tavily import TavilyClient
-    except ImportError:
-        TavilyClient = None
-    try:
-        import cohere
-    except ImportError:
-        cohere = None
-    try:
-        from openai import OpenAI
-    except ImportError:
-        OpenAI = None
+    genai = None
+    service_account = None
+try:
+    from tavily import TavilyClient
+except ImportError:
+    TavilyClient = None
+try:
+    import cohere
+except ImportError:
+    cohere = None
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 
 # Import providers module
 from providers import (
@@ -77,7 +74,7 @@ COHERE_API_KEY = os.environ.get("COHERE_API_KEY", "")
 
 CREDENTIALS_PATH = os.environ.get(
     "GOOGLE_APPLICATION_CREDENTIALS",
-    "/home/adilhidayat/jkst-credentials.json"
+    "/opt/jkst-ai/jkst-credentials.json"
 )
 
 # GCS Bucket for documents
@@ -89,15 +86,15 @@ BASE_URL = os.environ.get("BASE_URL", "http://localhost:8001")
 
 # Local Knowledge Files Configuration
 # Folder containing .txt files for additional knowledge
-LOCAL_KNOWLEDGE_PATH = os.environ.get("LOCAL_KNOWLEDGE_PATH", "/opt/jkst-master-ai/knowledge")
+LOCAL_KNOWLEDGE_PATH = os.environ.get("LOCAL_KNOWLEDGE_PATH", "/opt/jkst-ai/knowledge")
 
 # CSV Logging Configuration
 # Path for conversation log CSV file
-CSV_LOG_PATH = os.environ.get("CSV_LOG_PATH", "/opt/jkst-master-ai/logs/conversations.csv")
+CSV_LOG_PATH = os.environ.get("CSV_LOG_PATH", "/opt/jkst-ai/logs/conversations.csv")
 
 # Feedback Configuration
 # Path for feedback CSV file
-FEEDBACK_CSV_PATH = os.environ.get("FEEDBACK_CSV_PATH", "/opt/jkst-master-ai/logs/feedback.csv")
+FEEDBACK_CSV_PATH = os.environ.get("FEEDBACK_CSV_PATH", "/opt/jkst-ai/logs/feedback.csv")
 
 # ============================================================================
 # TELEGRAM BOT CONFIGURATION
@@ -885,6 +882,53 @@ async def retrieve_from_rag(query: str) -> tuple[List[str], List[Dict[str, Any]]
 # ============================================================================
 # WEB SEARCH (TAVILY)
 # ============================================================================
+BRAVE_API_KEY = os.environ.get("BRAVE_API_KEY", "")
+
+
+def search_web_brave(query: str) -> tuple[List[str], List[Dict[str, Any]]]:
+    """Search the web using Brave Search API."""
+    if not BRAVE_API_KEY:
+        return [], []
+
+    try:
+        search_query = f"mahkamah syariah terengganu {query}" if "jkst" not in query.lower() and "syariah" not in query.lower() else query
+
+        response = httpx.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            params={"q": search_query, "count": 5},
+            headers={"X-Subscription-Token": BRAVE_API_KEY, "Accept": "application/json"},
+            timeout=15.0
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        contexts = []
+        sources = []
+
+        for result in data.get("web", {}).get("results", [])[:5]:
+            title = result.get("title", "")
+            url = result.get("url", "")
+            description = result.get("description", "")
+
+            if title and description:
+                contexts.append(f"[SUMBER TAMBAHAN - WEB] {title}\nURL: {url}\n{description}")
+                sources.append({
+                    "type": "Web (Brave)",
+                    "filename": title,
+                    "page_content": description[:500],
+                    "score": 0,
+                    "source_uri": url,
+                    "priority": "SUPPLEMENTARY"
+                })
+
+        print(f"Brave search: {len(contexts)} results for: {search_query[:50]}")
+        return contexts, sources
+
+    except Exception as e:
+        print(f"Brave search error: {e}")
+        return [], []
+
+
 def search_web_tavily(query: str) -> tuple[List[str], List[Dict[str, Any]]]:
     """Search the web using Tavily - SUPPLEMENTARY SOURCE ONLY."""
     try:
@@ -927,6 +971,23 @@ def search_web_tavily(query: str) -> tuple[List[str], List[Dict[str, Any]]]:
     except Exception as e:
         print(f"Tavily search error: {e}")
         return [], []
+
+
+def search_web(query: str) -> tuple[List[str], List[Dict[str, Any]]]:
+    """Search the web using best available provider: Tavily → Brave → empty."""
+    # Try Tavily first (better AI-structured results)
+    if TAVILY_API_KEY:
+        contexts, sources = search_web_tavily(query)
+        if contexts:
+            return contexts, sources
+
+    # Fallback to Brave
+    if BRAVE_API_KEY:
+        contexts, sources = search_web_brave(query)
+        if contexts:
+            return contexts, sources
+
+    return [], []
 
 
 # ============================================================================
@@ -1230,68 +1291,35 @@ def build_prompt(query: str, rag_contexts: List[str], web_contexts: List[str], h
             role = "Pengguna" if msg["role"] == "user" else "Pembantu"
             history_text += f"{role}: {msg['content']}\n"
 
-    # Base system prompt
-    system_prompt = """Anda adalah Pembantu AI JKST (Jabatan Kehakiman Syariah Terengganu).
+    # Base system prompt — natural conversational style
+    system_prompt = """Kamu adalah pegawai khidmat pelanggan JKST (Jabatan Kehakiman Syariah Terengganu) yang mesra dan berpengetahuan. Jawab seperti manusia biasa yang sedang berbual — bukan robot. Gunakan bahasa yang santai tapi profesional.
 
-TENTANG JKST:
-Jabatan Kehakiman Syariah Terengganu adalah institusi kehakiman syariah rasmi untuk negeri Terengganu, yang menyediakan perkhidmatan kehakiman berkualiti berasaskan prinsip Islam. JKST mengendalikan Mahkamah Tinggi Syariah dan 7 Mahkamah Rendah Syariah Daerah di seluruh Terengganu.
+PERATURAN PENTING:
+1. JANGAN SEKALI-KALI guna emoji, emotikon, atau simbol hiasan dalam jawapan.
+2. Tulis secara semula jadi seperti manusia berbual di kaunter — ringkas, jelas, mesra.
+3. Jangan guna ayat pembuka yang klise seperti "Terima kasih atas soalan anda" atau "Soalan yang bagus". Terus jawab.
+4. Jangan ulang soalan pengguna balik. Terus beri jawapan.
+5. Guna "kamu/anda" bukan "tuan/puan" kecuali konteks rasmi.
 
-⚠️ AMARAN PENTING - BATASAN SISTEM:
-Sistem ini adalah untuk PENILAIAN DALAMAN sahaja. JANGAN berikan:
-- Nasihat undang-undang atau perundangan
-- Fatwa atau nasihat agama
-- Keputusan atau pandangan peribadi mengenai kes mahkamah
-- Tafsiran hukum syarak
+RUJUKAN DAN SUMBER:
+- Jika jawapan berdasarkan dokumen tertentu, WAJIB sertakan rujukan yang boleh diklik.
+- Format rujukan: [Nama Dokumen](URL_PENUH) — guna URL tepat dari konteks yang diberikan.
+- Jika ada pautan muat turun, sertakan terus: Muat turun: [nama fail](URL)
+- Jika tiada dokumen spesifik, nyatakan sumber secara umum (cth: "Berdasarkan maklumat dari laman web rasmi JKST").
+- JANGAN reka URL. Guna HANYA URL yang ada dalam konteks.
 
-Sebaliknya, BANTU pengguna dengan:
-- Maklumat prosedur dan proses pentadbiran
-- Borang dan dokumen yang diperlukan
-- Waktu operasi dan maklumat hubungan
-- Panduan langkah-langkah permohonan
-- Arahkan pengguna kepada pegawai yang berkenaan untuk nasihat lanjut
+BATASAN:
+- Jangan beri nasihat undang-undang, fatwa, atau tafsiran hukum syarak.
+- Untuk perkara undang-undang, cadangkan jumpa pegawai mahkamah atau peguam syarie.
+- Jika tak pasti atau maklumat tak dijumpai, cakap terus terang — jangan reka jawapan.
+- Utamakan dokumen rasmi JKST. Maklumat web hanya sebagai tambahan.
 
-PERATURAN PENTING - KEUTAMAAN SUMBER:
-1. **DOKUMEN RASMI JKST & LAMAN WEB RASMI (https://syariah.terengganu.gov.my/)** adalah SUMBER UTAMA
-   - SENTIASA utamakan maklumat dari dokumen rasmi dan laman web JKST
-   - Dokumen rasmi termasuk: SOP, prosedur mahkamah, borang, arahan, polisi, dan dokumen dalaman JKST
-   - Jika dokumen rasmi ada maklumat, GUNAKAN maklumat tersebut
-   - Rujuk https://syariah.terengganu.gov.my/ untuk maklumat terkini
-
-2. **CARIAN WEB** adalah SUMBER TERAKHIR sahaja
-   - HANYA gunakan jika maklumat TIDAK DITEMUI dalam dokumen rasmi atau laman web JKST
-   - Elakkan menggunakan sumber web untuk perkara berkaitan undang-undang atau agama
-
-3. **JIKA MAKLUMAT BERCANGGAH** antara dokumen rasmi dan web:
-   - SENTIASA ikut dokumen rasmi JKST
-   - Nyatakan bahawa maklumat dari dokumen rasmi adalah yang sahih
-
-4. **JIKA MAKLUMAT TIDAK DITEMUI**:
-   - Nyatakan dengan jujur bahawa maklumat tidak ditemui
-   - Cadangkan pengguna menghubungi JKST secara terus
-   - JANGAN reka atau andaikan maklumat
-
-Panduan Jawapan:
-- Jawab dalam Bahasa Melayu yang profesional dan sopan
-- Nyatakan sumber jawapan anda dengan jelas
-- Fokus kepada maklumat PROSEDUR dan PENTADBIRAN sahaja
-- Untuk soalan undang-undang/agama, arahkan kepada: "Sila rujuk pegawai mahkamah atau peguam syarie yang bertauliah"
-- Cuba bantu sebaik mungkin dalam skop yang dibenarkan
-- Sentiasa akhiri dengan maklumat hubungan JKST jika perlu bantuan lanjut
-
-PENTING - PAUTAN MUAT TURUN DOKUMEN:
-- Setiap dokumen rasmi mempunyai pautan muat turun (download URL) yang LENGKAP
-- WAJIB sertakan pautan muat turun jika jawapan merujuk kepada borang, dokumen, atau fail
-- Gunakan URL PENUH seperti yang diberikan dalam konteks (bermula dengan http://)
-- Format: 📥 **Muat turun:** [nama fail](URL_PENUH)
-- JANGAN tukar atau pendekkan URL - gunakan URL TEPAT seperti yang diberikan
-
-MAKLUMAT HUBUNGAN JKST:
-- **Alamat:** Tingkat 5, Bangunan Mahkamah Syariah, Jalan Sultan Mohamad, 21100 Kuala Terengganu
-- **Waktu Operasi:** Ahad-Rabu: 8:00 AM – 4:00 PM, Khamis: 8:00 AM – 3:00 PM
-- **Telefon:** 09-623 2323
-- **Faks:** 09-624 1510
-- **Emel:** jkstr@esyariah.gov.my
-- **Laman Web:** https://syariah.terengganu.gov.my"""
+MAKLUMAT HUBUNGAN:
+Alamat: Tingkat 5, Bangunan Mahkamah Syariah, Jalan Sultan Mohamad, 21100 Kuala Terengganu
+Waktu: Ahad-Rabu 8am-4pm, Khamis 8am-3pm
+Tel: 09-623 2323 | Faks: 09-624 1510
+Emel: jkstr@esyariah.gov.my
+Web: https://syariah.terengganu.gov.my"""
 
     # Construct context section
     context_section = ""
@@ -1428,7 +1456,7 @@ async def chat_local_or_ultra(messages_payload: List[Dict[str, str]], latest_mes
         jkst_news_contexts, jkst_news_sources = await fetch_jkst_news()
     elif query_type in ("external", "hybrid"):
         web_contexts, web_sources = await asyncio.to_thread(
-            search_web_tavily, latest_message
+            search_web, latest_message
         ) if TavilyClient else ([], [])
 
     # Step 5: Rerank if we have a reranker
@@ -1470,19 +1498,19 @@ async def chat_local_or_ultra(messages_payload: List[Dict[str, str]], latest_mes
 
     reply = await asyncio.to_thread(generator.generate, prompt)
 
-    # Step 7: Ultra mode extras
+    # Step 7: Ultra mode extras — run self-eval + follow-ups IN PARALLEL
     extras = {}
     if mode == "ultra" and enhancer:
-        # Self-evaluation
-        eval_data = await asyncio.to_thread(
+        # Run both LLM calls concurrently (saves ~8-10s)
+        eval_task = asyncio.to_thread(
             enhancer.self_evaluate, latest_message, reply, contexts
         )
-        extras["self_evaluation"] = eval_data
-
-        # Follow-up suggestions
-        followups = await asyncio.to_thread(
+        followup_task = asyncio.to_thread(
             enhancer.suggest_followups, latest_message, reply
         )
+        eval_data, followups = await asyncio.gather(eval_task, followup_task)
+
+        extras["self_evaluation"] = eval_data
         extras["followup_suggestions"] = followups
 
         # Save to conversation memory
@@ -1538,7 +1566,7 @@ async def stream_local_or_ultra(messages_payload: List[Dict[str, str]], latest_m
         jkst_news_contexts, _ = await fetch_jkst_news()
     elif query_type in ("external", "hybrid"):
         web_contexts, _ = await asyncio.to_thread(
-            search_web_tavily, latest_message
+            search_web, latest_message
         ) if TavilyClient else ([], [])
 
     # Rerank
@@ -1697,7 +1725,7 @@ async def chat(req: ChatRequest):
                 if not jkst_website_contexts and not has_relevant_rag_data:
                     print("No JKST website results and low RAG relevance, falling back to Tavily web search...")
                     web_contexts, web_sources = await asyncio.to_thread(
-                        search_web_tavily, latest_message
+                        search_web, latest_message
                     )
 
         elif query_type == "hybrid":
@@ -1712,13 +1740,13 @@ async def chat(req: ChatRequest):
             # Step 3b: Also search general web for hybrid queries
             print("Searching general web for hybrid query...")
             web_contexts, web_sources = await asyncio.to_thread(
-                search_web_tavily, latest_message
+                search_web, latest_message
             )
 
         elif query_type == "external":
             # For external queries, go straight to web search
             web_contexts, web_sources = await asyncio.to_thread(
-                search_web_tavily, latest_message
+                search_web, latest_message
             )
 
         # Combine all JKST website contexts
@@ -1891,7 +1919,7 @@ async def chat_stream(req: ChatRequest):
                 # Step 3b: If still not enough AND no relevant RAG, try general web search
                 if not jkst_website_contexts and not has_relevant_rag_data:
                     web_contexts, web_sources = await asyncio.to_thread(
-                        search_web_tavily, latest_message
+                        search_web, latest_message
                     )
 
         elif query_type == "hybrid":
@@ -1904,13 +1932,13 @@ async def chat_stream(req: ChatRequest):
 
             # Step 3b: Also search general web for hybrid queries
             web_contexts, web_sources = await asyncio.to_thread(
-                search_web_tavily, latest_message
+                search_web, latest_message
             )
 
         elif query_type == "external":
             # For external queries, go straight to web search
             web_contexts, web_sources = await asyncio.to_thread(
-                search_web_tavily, latest_message
+                search_web, latest_message
             )
 
         # Combine all JKST website contexts
@@ -2531,6 +2559,157 @@ async def synthesize_speech(request: Request):
 
 
 # ============================================================================
+# LOCAL VOICE FEATURES (100% local STT + TTS for Ultra mode)
+# ============================================================================
+
+_whisper_model = None
+_tts_model = None
+_tts_tokenizer = None
+
+
+def get_whisper_model():
+    """Lazy-load faster-whisper model on GPU."""
+    global _whisper_model
+    if _whisper_model is None:
+        from faster_whisper import WhisperModel
+        model_size = os.environ.get("WHISPER_MODEL", "large-v3")
+        device = os.environ.get("WHISPER_DEVICE", "cuda")
+        compute = "float16" if device == "cuda" else "int8"
+        print(f"[VOICE] Loading Whisper {model_size} on {device}...")
+        _whisper_model = WhisperModel(model_size, device=device, compute_type=compute)
+        print(f"[VOICE] Whisper ready on {device}")
+    return _whisper_model
+
+
+def get_tts_model():
+    """Lazy-load Facebook MMS-TTS Malay model on GPU."""
+    global _tts_model, _tts_tokenizer
+    if _tts_model is None:
+        import torch
+        from transformers import VitsModel, AutoTokenizer
+        model_name = os.environ.get("TTS_LOCAL_MODEL", "facebook/mms-tts-zlm")
+        device = os.environ.get("TTS_LOCAL_DEVICE", "cuda" if torch.cuda.is_available() else "cpu")
+        print(f"[VOICE] Loading TTS model {model_name} on {device}...")
+        _tts_model = VitsModel.from_pretrained(model_name).to(device)
+        _tts_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        print(f"[VOICE] TTS ready on {device}")
+    return _tts_model, _tts_tokenizer
+
+
+@app.post("/api/voice/transcribe/local")
+async def transcribe_audio_local(req: TranscribeRequest):
+    """
+    Transcribe audio to text using local Faster-Whisper on GPU.
+    100% local — no cloud API calls.
+    """
+    try:
+        model = await asyncio.to_thread(get_whisper_model)
+
+        # Decode base64 audio
+        audio_bytes = base64.b64decode(req.audio_data)
+        audio_file = io.BytesIO(audio_bytes)
+
+        # Transcribe with Whisper
+        segments, info = await asyncio.to_thread(
+            model.transcribe, audio_file, language="ms", beam_size=5
+        )
+        segments_list = list(segments)
+        text = " ".join(seg.text.strip() for seg in segments_list)
+
+        return {
+            "text": text,
+            "language": info.language,
+            "language_probability": round(info.language_probability, 2),
+            "duration": round(info.duration, 1),
+            "provider": "local-whisper"
+        }
+
+    except Exception as e:
+        print(f"Local transcription error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ralat transkripsi tempatan: {str(e)}"
+        )
+
+
+@app.post("/api/voice/synthesize/local")
+async def synthesize_speech_local(request: Request):
+    """
+    Convert text to speech using local MMS-TTS (Facebook) on GPU.
+    100% local — no cloud API calls. Returns WAV audio.
+    """
+    try:
+        import torch
+        import struct
+
+        data = await request.json()
+        text = data.get("text", "")
+
+        if not text:
+            raise HTTPException(status_code=400, detail="Teks kosong")
+
+        # Limit text length
+        if len(text) > 3000:
+            text = text[:3000]
+
+        def _synthesize(text_input):
+            model, tokenizer = get_tts_model()
+            device = next(model.parameters()).device
+            inputs = tokenizer(text_input, return_tensors="pt").to(device)
+            with torch.no_grad():
+                output = model(**inputs).waveform
+            # Convert to numpy
+            waveform = output.squeeze().cpu().numpy()
+            return waveform
+
+        waveform = await asyncio.to_thread(_synthesize, text)
+
+        # Convert numpy array to WAV bytes
+        sample_rate = 22050  # MMS-TTS default
+        audio_buf = io.BytesIO()
+        # Write WAV header
+        num_samples = len(waveform)
+        data_size = num_samples * 2  # 16-bit = 2 bytes per sample
+        audio_buf.write(b'RIFF')
+        audio_buf.write(struct.pack('<I', 36 + data_size))
+        audio_buf.write(b'WAVE')
+        audio_buf.write(b'fmt ')
+        audio_buf.write(struct.pack('<I', 16))  # chunk size
+        audio_buf.write(struct.pack('<H', 1))   # PCM format
+        audio_buf.write(struct.pack('<H', 1))   # mono
+        audio_buf.write(struct.pack('<I', sample_rate))
+        audio_buf.write(struct.pack('<I', sample_rate * 2))  # byte rate
+        audio_buf.write(struct.pack('<H', 2))   # block align
+        audio_buf.write(struct.pack('<H', 16))  # bits per sample
+        audio_buf.write(b'data')
+        audio_buf.write(struct.pack('<I', data_size))
+        # Write audio data as 16-bit PCM
+        import numpy as np
+        pcm = (waveform * 32767).astype(np.int16)
+        audio_buf.write(pcm.tobytes())
+
+        audio_buf.seek(0)
+        return Response(
+            content=audio_buf.read(),
+            media_type="audio/wav",
+            headers={
+                "Content-Disposition": "inline; filename=speech.wav"
+            }
+        )
+
+    except Exception as e:
+        print(f"Local TTS error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ralat TTS tempatan: {str(e)}"
+        )
+
+
+# ============================================================================
 # TELEGRAM BOT INTEGRATION
 # ============================================================================
 
@@ -2787,11 +2966,11 @@ Jawapan adalah untuk panduan am sahaja. Sila rujuk pegawai JKST untuk maklumat r
                     web_contexts, web_sources = [], []
                     if query_type == "external" or query_type == "hybrid":
                         web_contexts, web_sources = await asyncio.to_thread(
-                            search_web_tavily, text
+                            search_web, text
                         )
                     elif query_type == "internal" and not rag_contexts and not local_contexts:
                         web_contexts, web_sources = await asyncio.to_thread(
-                            search_web_tavily, text
+                            search_web, text
                         )
 
                     # Combine sources
@@ -2954,3 +3133,150 @@ async def telegram_delete_webhook():
                 status_code=500,
                 detail=f"Error deleting webhook: {str(e)}"
             )
+
+
+# ============================================================================
+# TELEGRAM POLLING MODE (no public IP / webhook needed)
+# ============================================================================
+TELEGRAM_POLLING = os.environ.get("TELEGRAM_POLLING", "true").lower() == "true"
+_polling_offset = 0
+
+
+async def telegram_poll_loop():
+    """Background task: poll Telegram for new messages (no webhook needed)."""
+    global _polling_offset
+
+    if not TELEGRAM_BOT_TOKEN:
+        return
+
+    # First, delete any existing webhook so polling works
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/deleteWebhook",
+                timeout=10.0
+            )
+    except Exception:
+        pass
+
+    # Verify bot token works
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getMe",
+                timeout=10.0
+            )
+            bot_info = resp.json()
+            if bot_info.get("ok"):
+                bot_name = bot_info["result"].get("username", "?")
+                print(f"[TELEGRAM] Polling started for @{bot_name}")
+            else:
+                print(f"[TELEGRAM] Bot token invalid: {bot_info}")
+                return
+    except Exception as e:
+        print(f"[TELEGRAM] Cannot reach Telegram API: {e}")
+        return
+
+    while True:
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates",
+                    params={
+                        "offset": _polling_offset,
+                        "timeout": 30,
+                        "allowed_updates": '["message"]'
+                    },
+                    timeout=35.0
+                )
+                data = resp.json()
+
+            if data.get("ok") and data.get("result"):
+                for update in data["result"]:
+                    _polling_offset = update["update_id"] + 1
+
+                    # Reuse the existing webhook handler logic
+                    if "message" in update:
+                        message = update["message"]
+                        chat_id = message["chat"]["id"]
+                        text = message.get("text", "")
+                        user = message.get("from", {})
+                        username = user.get("username", user.get("first_name", "User"))
+
+                        if not text:
+                            continue
+
+                        print(f"[TELEGRAM] @{username}: {text[:80]}")
+
+                        # Handle commands
+                        if text.startswith("/"):
+                            command = text.split()[0].lower()
+                            if command == "/start":
+                                welcome_msg = (
+                                    "\U0001f54c <b>Salam Sejahtera!</b>\n\n"
+                                    "Saya adalah <b>Pembantu AI JKST</b> (Jabatan Kehakiman Syariah Terengganu).\n\n"
+                                    "Saya boleh membantu anda dengan:\n"
+                                    "\u2022 Prosedur mahkamah syariah\n"
+                                    "\u2022 Undang-undang keluarga Islam\n"
+                                    "\u2022 Perkhidmatan JKST\n"
+                                    "\u2022 Borang dan dokumen\n\n"
+                                    "<b>Arahan:</b>\n"
+                                    "/start - Mesej selamat datang\n"
+                                    "/clear - Padam sejarah perbualan\n"
+                                    "/help - Bantuan\n\n"
+                                    "Sila tanya soalan anda dalam Bahasa Melayu."
+                                )
+                                await send_telegram_message(chat_id, welcome_msg)
+                            elif command == "/clear":
+                                clear_telegram_conversation(chat_id)
+                                await send_telegram_message(chat_id, "\u2705 Sejarah perbualan telah dipadam.")
+                            elif command == "/help":
+                                help_msg = (
+                                    "\U0001f4d6 <b>Bantuan Pembantu AI JKST</b>\n\n"
+                                    "<b>Contoh Soalan:</b>\n"
+                                    "\u2022 Bagaimana nak memohon cerai?\n"
+                                    "\u2022 Apakah dokumen untuk perkahwinan?\n"
+                                    "\u2022 Di mana Mahkamah Syariah Kuala Terengganu?\n\n"
+                                    "\U0001f4de Hubungi: 09-623 2323\n"
+                                    "\U0001f310 Web: syariah.terengganu.gov.my"
+                                )
+                                await send_telegram_message(chat_id, help_msg)
+                            continue
+
+                        # Process regular messages
+                        await send_telegram_typing(chat_id)
+                        conversation = get_telegram_conversation(chat_id)
+                        add_to_telegram_conversation(chat_id, "user", text)
+
+                        try:
+                            # Use local/ultra mode for Telegram (works without Google Cloud)
+                            result = await chat_local_or_ultra(
+                                conversation.copy(), text, override_mode="ultra"
+                            )
+                            reply = result["reply"]
+                            all_sources = result.get("retrieval", [])
+
+                            add_to_telegram_conversation(chat_id, "assistant", reply)
+                            formatted_reply = format_response_for_telegram(reply, all_sources)
+                            await send_telegram_message(chat_id, formatted_reply)
+
+                        except Exception as e:
+                            print(f"[TELEGRAM] Error: {e}")
+                            await send_telegram_message(
+                                chat_id,
+                                "\u26a0\ufe0f Maaf, ralat telah berlaku. Sila cuba semula."
+                            )
+
+        except httpx.ReadTimeout:
+            # Normal — long polling timeout, just retry
+            continue
+        except Exception as e:
+            print(f"[TELEGRAM] Polling error: {e}")
+            await asyncio.sleep(5)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background tasks on app startup."""
+    if TELEGRAM_BOT_TOKEN and TELEGRAM_POLLING:
+        asyncio.create_task(telegram_poll_loop())

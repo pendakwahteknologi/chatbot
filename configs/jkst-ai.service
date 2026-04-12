@@ -1,0 +1,61 @@
+[Unit]
+Description=JKST AI Assistant backend (FastAPI + uvicorn) — GX10 Tuned
+After=network.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=gx10
+Group=gx10
+WorkingDirectory=/opt/jkst-ai
+EnvironmentFile=/opt/jkst-ai/backend.env
+
+# GX10 Tuned: 8 workers (balance between parallelism and GPU memory)
+# uvloop for high-performance async I/O
+# 200 concurrent connections per worker (1600 total)
+# 65s keepalive to outlast nginx's 60s default
+# 2048 backlog for burst traffic
+ExecStart=/opt/jkst-ai/venv/bin/uvicorn app:app \
+    --host 127.0.0.1 \
+    --port 8001 \
+    --workers 8 \
+    --loop uvloop \
+    --http h11 \
+    --limit-concurrency 200 \
+    --timeout-keep-alive 65 \
+    --backlog 2048 \
+    --no-access-log
+
+# Fast restart on failure
+Restart=always
+RestartSec=3
+
+# GX10 Resource limits: 122GB RAM available, need room for ML models
+# Each worker loads embedding model (~400MB) + cross-encoder (~100MB)
+# 8 workers = ~4GB models + overhead + ChromaDB cache
+MemoryMax=16G
+MemoryHigh=12G
+CPUQuota=90%
+
+# GPU access — required for CUDA-accelerated embeddings
+SupplementaryGroups=video render
+
+# Allow enough file descriptors for concurrent connections
+LimitNOFILE=65536
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/jkst-ai/logs /opt/jkst-ai/chroma_db /opt/jkst-ai/.hf_cache
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=jkst-assistant
+
+[Install]
+WantedBy=multi-user.target
