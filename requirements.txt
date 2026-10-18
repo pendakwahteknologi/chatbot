@@ -22,7 +22,7 @@ fastapi==0.122.0
 fastavro==1.12.1
 filelock==3.20.3
 flatbuffers==25.12.19
-fsspec==2026.1.0
+fsspec==2026.6.0
 gitdb==4.0.12
 GitPython==3.1.62
 google-ai-generativelanguage==0.6.15
