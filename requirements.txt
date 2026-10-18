@@ -85,7 +85,7 @@ packaging==26.0
 pandas==2.3.3
 pillow==12.1.1
 proto-plus==1.27.0
-protobuf==5.29.5
+protobuf==5.29.6
 pyarrow==23.0.0
 pyasn1==0.6.3
 pyasn1_modules==0.4.2
